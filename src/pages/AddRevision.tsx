@@ -29,7 +29,7 @@ const subjects = [
 ];
 
 const AddRevision = () => {
-  const [date, setDate] = useState<Date>();
+  const [date, setDate] = useState<Date>(new Date());
   const [subject, setSubject] = useState("");
   const [totalQuestions, setTotalQuestions] = useState("");
   const [correctAnswers, setCorrectAnswers] = useState("");
@@ -76,7 +76,7 @@ const AddRevision = () => {
       });
 
       // Reset form
-      setDate(undefined);
+      setDate(new Date());
       setSubject("");
       setTotalQuestions("");
       setCorrectAnswers("");

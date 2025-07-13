@@ -9,37 +9,38 @@ import {
   Title,
   Tooltip,
   Legend,
-  ArcElement,
-  PointElement,
   LineElement,
+  PointElement,
 } from 'chart.js';
-import { Bar, Pie, Line } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import {
+  RevisionData,
+  processSubjectAnalysis,
+  buildSubjectChart,
+  processProgressData,
+  buildProgressChart,
+} from "@/lib/chartUtils";
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  LineElement,
+  PointElement,
   Title,
   Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement
+  Legend
 );
-
-interface RevisionData {
-  date: string;
-  subject: string;
-  numQuestions: number;
-  numCorrect: number;
-  remarks: string;
-}
 
 const Analysis = () => {
   const [revisions, setRevisions] = useState<RevisionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchRevisions = async () => {
@@ -50,58 +51,28 @@ const Analysis = () => {
         setRevisions(data);
       } catch (error) {
         console.error("Error fetching revisions:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch revision data",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRevisions();
-  }, []);
-
-  // Subject-wise analysis
-  const subjectAnalysis = revisions.reduce((acc, revision) => {
-    if (!acc[revision.subject]) {
-      acc[revision.subject] = { total: 0, correct: 0, attempts: 0 };
-    }
-    acc[revision.subject].total += revision.numQuestions;
-    acc[revision.subject].correct += revision.numCorrect;
-    acc[revision.subject].attempts += 1;
-    return acc;
-  }, {} as Record<string, { total: number; correct: number; attempts: number }>);
-
-  const subjectNames = Object.keys(subjectAnalysis);
-  const subjectAccuracy = subjectNames.map(subject => 
-    ((subjectAnalysis[subject].correct / subjectAnalysis[subject].total) * 100).toFixed(1)
-  );
-  const subjectAttempts = subjectNames.map(subject => subjectAnalysis[subject].attempts);
-
-  // Daily progress analysis
-  const dailyProgress = revisions.reduce((acc, revision) => {
-    if (!acc[revision.date]) {
-      acc[revision.date] = { total: 0, correct: 0 };
-    }
-    acc[revision.date].total += revision.numQuestions;
-    acc[revision.date].correct += revision.numCorrect;
-    return acc;
-  }, {} as Record<string, { total: number; correct: number }>);
-
-  const dates = Object.keys(dailyProgress).sort();
-  const dailyTotalQuestions = dates.map(date => dailyProgress[date].total);
-  const dailyCorrectAnswers = dates.map(date => dailyProgress[date].correct);
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-    },
-  };
+  }, [toast]);
 
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <div className="text-center">Loading analysis...</div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading analysis...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -109,169 +80,136 @@ const Analysis = () => {
   if (revisions.length === 0) {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6 text-center">Analysis</h1>
-        <div className="text-center text-muted-foreground">
-          No revision data available. Add some revisions to see analysis.
-        </div>
+        <h1 className="text-3xl font-bold mb-6 text-center font-semibold">Analysis Dashboard</h1>
+        <Card className="shadow-sm">
+          <CardContent className="py-12">
+            <div className="text-center text-muted-foreground">
+              <div className="mb-4">📊</div>
+              <h3 className="text-lg font-medium mb-2">No data yet</h3>
+              <p>Add some revisions to see your progress analysis.</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const subjectAnalysis = processSubjectAnalysis(revisions);
+  const subjectChart = buildSubjectChart(subjectAnalysis);
+  
+  const progressData = processProgressData(revisions, timeframe);
+  const progressChart = buildProgressChart(progressData);
+
+  const totalRevisions = revisions.length;
+  const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
+  const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
+  const overallAccuracy = totalQuestions > 0 ? ((totalCorrect / totalQuestions) * 100).toFixed(1) : '0';
+
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center">Analysis Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6 text-center font-semibold">Analysis Dashboard</h1>
       
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revisions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{totalRevisions}</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Questions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{totalQuestions}</div>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Overall Accuracy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{overallAccuracy}%</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue="subjects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="subjects">Subject Analysis</TabsTrigger>
-          <TabsTrigger value="progress">Progress Tracking</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-muted">
+          <TabsTrigger value="subjects" className="font-medium">Subject Analysis</TabsTrigger>
+          <TabsTrigger value="progress" className="font-medium">Progress Tracking</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subjects" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Subject-wise Accuracy</CardTitle>
-                <CardDescription>Accuracy percentage by subject</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Bar
-                  data={{
-                    labels: subjectNames,
-                    datasets: [
-                      {
-                        label: 'Accuracy (%)',
-                        data: subjectAccuracy,
-                        backgroundColor: 'hsl(var(--primary))',
-                        borderColor: 'hsl(var(--primary))',
-                        borderWidth: 1,
-                      },
-                    ],
-                  }}
-                  options={{
-                    ...chartOptions,
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        max: 100,
-                      },
-                    },
-                  }}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Subject-wise Attempts</CardTitle>
-                <CardDescription>Number of attempts per subject</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Pie
-                  data={{
-                    labels: subjectNames,
-                    datasets: [
-                      {
-                        data: subjectAttempts,
-                        backgroundColor: [
-                          'hsl(var(--primary))',
-                          'hsl(var(--secondary))',
-                          'hsl(var(--accent))',
-                          'hsl(var(--muted))',
-                          '#FF6384',
-                          '#36A2EB',
-                          '#FFCE56',
-                          '#4BC0C0',
-                          '#9966FF',
-                          '#FF9F40',
-                          '#FF6384',
-                          '#C9CBCF'
-                        ],
-                        borderWidth: 2,
-                      },
-                    ],
-                  }}
-                  options={chartOptions}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="progress">
-          <Card>
+          <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle>Daily Progress</CardTitle>
-              <CardDescription>Questions attempted vs correct answers over time</CardDescription>
+              <CardTitle className="font-semibold">Subject-wise Performance</CardTitle>
+              <CardDescription>
+                Stacked bar chart showing correct vs wrong answers with accuracy line overlay
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <Line
-                data={{
-                  labels: dates,
-                  datasets: [
-                    {
-                      label: 'Total Questions',
-                      data: dailyTotalQuestions,
-                      borderColor: 'hsl(var(--primary))',
-                      backgroundColor: 'hsl(var(--primary) / 0.1)',
-                      tension: 0.1,
-                    },
-                    {
-                      label: 'Correct Answers',
-                      data: dailyCorrectAnswers,
-                      borderColor: 'hsl(var(--secondary))',
-                      backgroundColor: 'hsl(var(--secondary) / 0.1)',
-                      tension: 0.1,
-                    },
-                  ],
-                }}
-                options={{
-                  ...chartOptions,
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                    },
-                  },
-                }}
-              />
+              <div className="h-[500px]">
+                <Bar
+                  data={subjectChart.data}
+                  options={subjectChart.options}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="progress" className="space-y-6">
+          <Card className="shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-semibold">Progress Over Time</CardTitle>
+              <CardDescription>
+                Track your questions attempted and correct answers over time
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 flex gap-2 flex-wrap">
+                <Button
+                  variant={timeframe === 'daily' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTimeframe('daily')}
+                  className="font-medium"
+                >
+                  Daily
+                </Button>
+                <Button
+                  variant={timeframe === 'weekly' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTimeframe('weekly')}
+                  className="font-medium"
+                >
+                  Weekly
+                </Button>
+                <Button
+                  variant={timeframe === 'monthly' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTimeframe('monthly')}
+                  className="font-medium"
+                >
+                  Monthly
+                </Button>
+              </div>
+              
+              <div className="h-[400px]">
+                <Line
+                  data={progressChart.data}
+                  options={progressChart.options}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Revisions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{revisions.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Questions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {revisions.reduce((sum, r) => sum + r.numQuestions, 0)}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Overall Accuracy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {((revisions.reduce((sum, r) => sum + r.numCorrect, 0) / 
-                 revisions.reduce((sum, r) => sum + r.numQuestions, 0)) * 100).toFixed(1)}%
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
