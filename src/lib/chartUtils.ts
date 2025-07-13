@@ -80,9 +80,8 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
     interaction: {
-      mode: 'nearest' as const,
-      axis: 'y' as const,
-      intersect: true,
+      mode: 'index' as const,
+      intersect: false,
     },
     plugins: {
       legend: {
@@ -104,12 +103,14 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
         cornerRadius: 12,
         padding: 12,
         callbacks: {
+          title: function(context: any) {
+            return context[0].label;
+          },
           label: function(context: any) {
-            const datasetIndex = context.datasetIndex;
-            const dataIndex = context.dataIndex;
-            const subjectName = context.chart.data.labels[dataIndex];
+            // Only show consolidated tooltip for the first dataset to avoid repetition
+            if (context.datasetIndex !== 0) return null;
             
-            // Get data from both datasets for this subject
+            const dataIndex = context.dataIndex;
             const correctData = context.chart.data.datasets[0].data;
             const wrongData = context.chart.data.datasets[1].data;
             
@@ -219,9 +220,8 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
     interaction: {
-      mode: 'nearest' as const,
-      axis: 'y' as const,
-      intersect: true,
+      mode: 'index' as const,
+      intersect: false,
     },
     plugins: {
       legend: {
@@ -243,11 +243,15 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
         cornerRadius: 12,
         padding: 12,
         callbacks: {
+          title: function(context: any) {
+            return context[0].label;
+          },
           label: function(context: any) {
+            // Only show consolidated tooltip for the first dataset to avoid repetition
+            if (context.datasetIndex !== 0) return null;
+            
             const dataIndex = context.dataIndex;
             const typeName = context.chart.data.labels[dataIndex];
-            
-            // Get data from both datasets for this type
             const correctData = context.chart.data.datasets[0].data;
             const wrongData = context.chart.data.datasets[1].data;
             
