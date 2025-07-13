@@ -63,14 +63,18 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
         data: correctData,
         backgroundColor: '#20c997', // Vibrant teal
         borderColor: '#20c997',
-        borderWidth: 1,
+        borderWidth: 0,
+        borderRadius: 4,
+        borderSkipped: false,
       },
       {
-        label: 'Wrong Answers',
+        label: 'Incorrect Answers',
         data: wrongData,
-        backgroundColor: '#ff6b6b', // Vibrant coral
+        backgroundColor: '#ff6b6b', // Vibrant coral/red
         borderColor: '#ff6b6b',
-        borderWidth: 1,
+        borderWidth: 0,
+        borderRadius: 4,
+        borderSkipped: false,
       },
     ],
   };
@@ -79,8 +83,38 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
     responsive: true,
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
+    scales: {
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
+          },
+        },
+      },
+      y: {
+        stacked: true,
+        type: 'category' as const,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
+          },
+        },
+      },
+    },
     interaction: {
-      mode: 'index' as const,
+      mode: 'point' as const,
       intersect: false,
     },
     plugins: {
@@ -103,57 +137,53 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
         cornerRadius: 12,
         padding: 12,
         callbacks: {
+          beforeLabel: function() {
+            // Prevent multiple tooltips by returning empty for non-first dataset
+            return null;
+          },
           title: function(context: any) {
-            return context[0].label;
+            return `📘 Subject: ${context[0].label}`;
           },
           label: function(context: any) {
-            // Only show consolidated tooltip for the first dataset to avoid repetition
-            if (context.datasetIndex !== 0) return null;
+            // Get the subject name and find its data
+            const subjectName = context.label;
+            const subjectStats = Object.entries(subjectAnalysis).find(([key]) => key === subjectName);
             
-            const dataIndex = context.dataIndex;
-            const correctData = context.chart.data.datasets[0].data;
-            const wrongData = context.chart.data.datasets[1].data;
+            if (!subjectStats) return [];
             
-            const correct = correctData[dataIndex];
-            const wrong = wrongData[dataIndex];
-            const total = correct + wrong;
-            const accuracy = total > 0 ? ((correct / total) * 100).toFixed(1) : '0';
+            const [, stats] = subjectStats;
+            const correct = stats.totalCorrect;
+            const total = stats.totalQuestions;
+            const wrong = total - correct;
+            const accuracy = ((correct / total) * 100).toFixed(1);
             
             return [
               `✅ Correct Answers: ${correct}`,
               `❌ Incorrect Answers: ${wrong}`,
-              `📊 Accuracy: ${accuracy}%`
+              `📈 Accuracy: ${accuracy}%`
             ];
+          },
+          labelColor: function(context: any) {
+            // Return colors for the labels
+            if (context.datasetIndex === 0) {
+              return {
+                borderColor: '#20c997',
+                backgroundColor: '#20c997'
+              };
+            } else {
+              return {
+                borderColor: '#ff6b6b',
+                backgroundColor: '#ff6b6b'
+              };
+            }
           }
         }
       },
-    },
-    scales: {
-      x: {
-        beginAtZero: true,
-        grid: {
-          color: 'hsl(214.3 31.8% 91.4% / 0.5)',
-        },
-        ticks: {
-          color: 'hsl(215.4 16.3% 46.9%)',
-          font: {
-            family: 'system-ui',
-          },
-        },
-      },
-      y: {
-        type: 'category' as const,
-        stacked: true,
-        grid: {
-          color: 'hsl(214.3 31.8% 91.4% / 0.5)',
-        },
-        ticks: {
-          color: 'hsl(215.4 16.3% 46.9%)',
-          font: {
-            family: 'system-ui',
-          },
-        },
-      },
+      onHover: (event: any, elements: any) => {
+        if (event.native) {
+          event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+        }
+      }
     },
   };
 
@@ -201,16 +231,18 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
         data: correctData,
         backgroundColor: '#20c997', // Vibrant teal
         borderColor: '#20c997',
-        borderWidth: 1,
+        borderWidth: 0,
         borderRadius: 4,
+        borderSkipped: false,
       },
       {
-        label: 'Wrong Answers',
+        label: 'Incorrect Answers',
         data: wrongData,
-        backgroundColor: '#ff6b6b', // Vibrant coral
+        backgroundColor: '#ff6b6b', // Vibrant coral/red
         borderColor: '#ff6b6b',
-        borderWidth: 1,
+        borderWidth: 0,
         borderRadius: 4,
+        borderSkipped: false,
       },
     ],
   };
@@ -219,8 +251,38 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
     responsive: true,
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
+    scales: {
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
+          },
+        },
+      },
+      y: {
+        stacked: true,
+        type: 'category' as const,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
+          },
+        },
+      },
+    },
     interaction: {
-      mode: 'index' as const,
+      mode: 'point' as const,
       intersect: false,
     },
     plugins: {
@@ -243,61 +305,50 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
         cornerRadius: 12,
         padding: 12,
         callbacks: {
+          beforeLabel: function() {
+            return null;
+          },
           title: function(context: any) {
-            return context[0].label;
+            return `📚 Type: ${context[0].label}`;
           },
           label: function(context: any) {
-            // Only show consolidated tooltip for the first dataset to avoid repetition
-            if (context.datasetIndex !== 0) return null;
+            const typeName = context.label;
+            const typeStats = Object.entries(typeAnalysis).find(([key]) => key === typeName);
             
-            const dataIndex = context.dataIndex;
-            const typeName = context.chart.data.labels[dataIndex];
-            const correctData = context.chart.data.datasets[0].data;
-            const wrongData = context.chart.data.datasets[1].data;
+            if (!typeStats) return [];
             
-            const correct = correctData[dataIndex];
-            const wrong = wrongData[dataIndex];
-            const total = correct + wrong;
-            const accuracy = total > 0 ? ((correct / total) * 100).toFixed(1) : '0';
+            const [, stats] = typeStats;
+            const correct = stats.totalCorrect;
+            const total = stats.totalQuestions;
+            const wrong = total - correct;
+            const accuracy = ((correct / total) * 100).toFixed(1);
             
             return [
-              `📚 Type: ${typeName}`,
               `✅ Correct: ${correct}`,
               `❌ Incorrect: ${wrong}`,
               `📈 Accuracy: ${accuracy}%`
             ];
+          },
+          labelColor: function(context: any) {
+            if (context.datasetIndex === 0) {
+              return {
+                borderColor: '#20c997',
+                backgroundColor: '#20c997'
+              };
+            } else {
+              return {
+                borderColor: '#ff6b6b',
+                backgroundColor: '#ff6b6b'
+              };
+            }
           }
         }
       },
-    },
-    scales: {
-      x: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: '#6c757d',
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
-      y: {
-        type: 'category' as const,
-        stacked: true,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: '#6c757d',
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
+      onHover: (event: any, elements: any) => {
+        if (event.native) {
+          event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+        }
+      }
     },
   };
 
