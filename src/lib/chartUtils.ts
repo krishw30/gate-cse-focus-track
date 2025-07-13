@@ -47,7 +47,8 @@ export const processSubjectAnalysis = (revisions: RevisionData[]): SubjectAnalys
 
 // Build stacked horizontal bar chart for subjects
 export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
-  const subjects = Object.keys(subjectAnalysis);
+  // Sort subjects alphabetically to ensure consistent tooltip matching
+  const subjects = Object.keys(subjectAnalysis).sort();
   const correctData = subjects.map(subject => subjectAnalysis[subject].totalCorrect);
   const wrongData = subjects.map(subject => 
     subjectAnalysis[subject].totalQuestions - subjectAnalysis[subject].totalCorrect
@@ -59,15 +60,15 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
       {
         label: 'Correct Answers',
         data: correctData,
-        backgroundColor: 'hsl(174 72% 56% / 0.8)',
-        borderColor: 'hsl(174 72% 56%)',
+        backgroundColor: '#20c997', // Vibrant teal
+        borderColor: '#20c997',
         borderWidth: 1,
       },
       {
         label: 'Wrong Answers',
         data: wrongData,
-        backgroundColor: 'hsl(14 100% 70% / 0.8)',
-        borderColor: 'hsl(14 100% 70%)',
+        backgroundColor: '#ff6b6b', // Vibrant coral
+        borderColor: '#ff6b6b',
         borderWidth: 1,
       },
     ],
@@ -75,10 +76,12 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     indexAxis: 'y' as const,
     interaction: {
-      mode: 'index' as const,
-      intersect: false,
+      mode: 'nearest' as const,
+      axis: 'y' as const,
+      intersect: true,
     },
     plugins: {
       legend: {
@@ -182,10 +185,10 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
       {
         label: 'Total Questions',
         data: questionsData,
-        backgroundColor: 'hsl(202 100% 43% / 0.4)',
-        borderColor: 'hsl(202 100% 43%)',
+        backgroundColor: 'rgba(0, 105, 217, 0.6)', // Blue with opacity
+        borderColor: '#0069d9',
         borderWidth: 3,
-        pointBackgroundColor: 'hsl(202 100% 43%)',
+        pointBackgroundColor: '#0069d9',
         pointBorderColor: 'hsl(0 0% 100%)',
         pointBorderWidth: 2,
         pointRadius: 5,
@@ -195,10 +198,10 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
       {
         label: 'Correct Answers',
         data: correctData,
-        backgroundColor: 'hsl(142 71% 45% / 0.4)',
-        borderColor: 'hsl(142 71% 45%)',
+        backgroundColor: 'rgba(32, 201, 151, 0.6)', // Teal with opacity
+        borderColor: '#20c997',
         borderWidth: 3,
-        pointBackgroundColor: 'hsl(142 71% 45%)',
+        pointBackgroundColor: '#20c997',
         pointBorderColor: 'hsl(0 0% 100%)',
         pointBorderWidth: 2,
         pointRadius: 5,
@@ -210,6 +213,7 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     interaction: {
       mode: 'index' as const,
       intersect: false,

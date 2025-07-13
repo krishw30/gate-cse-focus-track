@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import DetailsPanel from "@/components/DetailsPanel";
 import {
   RevisionData,
   processSubjectAnalysis,
@@ -107,50 +108,53 @@ const Analysis = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center font-semibold">Analysis Dashboard</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold font-semibold">Analysis Dashboard</h1>
+        <DetailsPanel revisions={revisions} />
+      </div>
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="shadow-sm">
+        <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Revisions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalRevisions}</div>
+            <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>{totalRevisions}</div>
           </CardContent>
         </Card>
         
-        <Card className="shadow-sm">
+        <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Questions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalQuestions}</div>
+            <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>{totalQuestions}</div>
           </CardContent>
         </Card>
         
-        <Card className="shadow-sm">
+        <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Overall Accuracy</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{overallAccuracy}%</div>
+            <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>{overallAccuracy}%</div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="subjects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-muted">
-          <TabsTrigger value="subjects" className="font-medium">Subject Analysis</TabsTrigger>
-          <TabsTrigger value="progress" className="font-medium">Progress Tracking</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-muted rounded-xl p-1">
+          <TabsTrigger value="subjects" className="font-medium rounded-lg">Subject Analysis</TabsTrigger>
+          <TabsTrigger value="progress" className="font-medium rounded-lg">Progress Tracking</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subjects" className="space-y-6">
-          <Card className="shadow-sm">
+          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <CardHeader>
-              <CardTitle className="font-semibold">Subject-wise Performance</CardTitle>
+              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Subject-wise Performance</CardTitle>
               <CardDescription>
-                Stacked bar chart showing correct vs wrong answers with accuracy line overlay
+                Stacked horizontal bars showing correct vs wrong answers for each subject
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -165,9 +169,9 @@ const Analysis = () => {
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-6">
-          <Card className="shadow-sm">
+          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <CardHeader>
-              <CardTitle className="font-semibold">Progress Over Time</CardTitle>
+              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Progress Over Time</CardTitle>
               <CardDescription>
                 Track your questions attempted and correct answers over time
               </CardDescription>
@@ -178,7 +182,8 @@ const Analysis = () => {
                   variant={timeframe === 'daily' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTimeframe('daily')}
-                  className="font-medium"
+                  className="font-medium transition-all hover:scale-105"
+                  style={timeframe === 'daily' ? { backgroundColor: '#0069d9', borderColor: '#0069d9' } : {}}
                 >
                   Daily
                 </Button>
@@ -186,7 +191,8 @@ const Analysis = () => {
                   variant={timeframe === 'weekly' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTimeframe('weekly')}
-                  className="font-medium"
+                  className="font-medium transition-all hover:scale-105"
+                  style={timeframe === 'weekly' ? { backgroundColor: '#0069d9', borderColor: '#0069d9' } : {}}
                 >
                   Weekly
                 </Button>
@@ -194,7 +200,8 @@ const Analysis = () => {
                   variant={timeframe === 'monthly' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTimeframe('monthly')}
-                  className="font-medium"
+                  className="font-medium transition-all hover:scale-105"
+                  style={timeframe === 'monthly' ? { backgroundColor: '#0069d9', borderColor: '#0069d9' } : {}}
                 >
                   Monthly
                 </Button>
