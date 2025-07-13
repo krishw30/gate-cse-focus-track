@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const subjects = [
   "Engineering Mathematics",
-  "Digital Logic",
+  "Digital Logic", 
   "Computer Organization and Architecture",
   "C Programming",
   "Data Structures",
@@ -28,9 +28,17 @@ const subjects = [
   "Discrete Mathematics"
 ];
 
+const revisionTypes = [
+  "DPP",
+  "PYQ", 
+  "Mock Test",
+  "Other"
+];
+
 const AddRevision = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [subject, setSubject] = useState("");
+  const [type, setType] = useState("");
   const [totalQuestions, setTotalQuestions] = useState("");
   const [correctAnswers, setCorrectAnswers] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -40,7 +48,7 @@ const AddRevision = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!date || !subject || !totalQuestions || !correctAnswers) {
+    if (!date || !subject || !type || !totalQuestions || !correctAnswers) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -64,6 +72,7 @@ const AddRevision = () => {
       await addDoc(collection(db, "revisions"), {
         date: format(date, "yyyy-MM-dd"),
         subject,
+        type,
         numQuestions: parseInt(totalQuestions),
         numCorrect: parseInt(correctAnswers),
         remarks,
@@ -78,6 +87,7 @@ const AddRevision = () => {
       // Reset form
       setDate(new Date());
       setSubject("");
+      setType("");
       setTotalQuestions("");
       setCorrectAnswers("");
       setRemarks("");
@@ -134,6 +144,22 @@ const AddRevision = () => {
               {subjects.map((subj) => (
                 <SelectItem key={subj} value={subj}>
                   {subj}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="type">Type</Label>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select revision type" />
+            </SelectTrigger>
+            <SelectContent>
+              {revisionTypes.map((revType) => (
+                <SelectItem key={revType} value={revType}>
+                  {revType}
                 </SelectItem>
               ))}
             </SelectContent>

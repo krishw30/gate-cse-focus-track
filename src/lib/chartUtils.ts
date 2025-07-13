@@ -5,6 +5,7 @@ export interface RevisionData {
   subject: string;
   numQuestions: number;
   numCorrect: number;
+  type: "DPP" | "PYQ" | "Mock Test" | "Other";
   remarks: string;
 }
 
@@ -88,19 +89,42 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
         position: 'top' as const,
         labels: {
           font: {
-            family: 'system-ui',
-            weight: 500,
+            family: 'Inter, system-ui',
+            weight: 600,
           },
-          color: 'hsl(222.2 84% 4.9%)',
+          color: '#212529',
         },
       },
       tooltip: {
-        backgroundColor: 'hsl(0 0% 100%)',
-        titleColor: 'hsl(222.2 84% 4.9%)',
-        bodyColor: 'hsl(222.2 84% 4.9%)',
-        borderColor: 'hsl(214.3 31.8% 91.4%)',
+        backgroundColor: '#ffffff',
+        titleColor: '#212529',
+        bodyColor: '#212529',
+        borderColor: '#e9ecef',
         borderWidth: 1,
-        cornerRadius: 8,
+        cornerRadius: 12,
+        padding: 12,
+        callbacks: {
+          label: function(context: any) {
+            const datasetIndex = context.datasetIndex;
+            const dataIndex = context.dataIndex;
+            const subjectName = context.chart.data.labels[dataIndex];
+            
+            // Get data from both datasets for this subject
+            const correctData = context.chart.data.datasets[0].data;
+            const wrongData = context.chart.data.datasets[1].data;
+            
+            const correct = correctData[dataIndex];
+            const wrong = wrongData[dataIndex];
+            const total = correct + wrong;
+            const accuracy = total > 0 ? ((correct / total) * 100).toFixed(1) : '0';
+            
+            return [
+              `✅ Correct Answers: ${correct}`,
+              `❌ Incorrect Answers: ${wrong}`,
+              `📊 Accuracy: ${accuracy}%`
+            ];
+          }
+        }
       },
     },
     scales: {
@@ -126,6 +150,147 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
           color: 'hsl(215.4 16.3% 46.9%)',
           font: {
             family: 'system-ui',
+          },
+        },
+      },
+    },
+  };
+
+  return { data, options };
+};
+
+// Process revisions data for type analysis
+export const processTypeAnalysis = (revisions: RevisionData[]) => {
+  const typeAnalysis = revisions.reduce((acc, revision) => {
+    const type = revision.type || "Other";
+    if (!acc[type]) {
+      acc[type] = {
+        totalCorrect: 0,
+        totalQuestions: 0,
+        attempts: 0,
+        accuracy: 0,
+      };
+    }
+    
+    acc[type].totalCorrect += revision.numCorrect;
+    acc[type].totalQuestions += revision.numQuestions;
+    acc[type].attempts += 1;
+    acc[type].accuracy = 
+      (acc[type].totalCorrect / acc[type].totalQuestions) * 100;
+    
+    return acc;
+  }, {} as SubjectAnalysis);
+
+  return typeAnalysis;
+};
+
+// Build stacked horizontal bar chart for types
+export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
+  const types = Object.keys(typeAnalysis).sort();
+  const correctData = types.map(type => typeAnalysis[type].totalCorrect);
+  const wrongData = types.map(type => 
+    typeAnalysis[type].totalQuestions - typeAnalysis[type].totalCorrect
+  );
+
+  const data = {
+    labels: types,
+    datasets: [
+      {
+        label: 'Correct Answers',
+        data: correctData,
+        backgroundColor: '#20c997', // Vibrant teal
+        borderColor: '#20c997',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+      {
+        label: 'Wrong Answers',
+        data: wrongData,
+        backgroundColor: '#ff6b6b', // Vibrant coral
+        borderColor: '#ff6b6b',
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    interaction: {
+      mode: 'nearest' as const,
+      axis: 'y' as const,
+      intersect: true,
+    },
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          font: {
+            family: 'Inter, system-ui',
+            weight: 600,
+          },
+          color: '#212529',
+        },
+      },
+      tooltip: {
+        backgroundColor: '#ffffff',
+        titleColor: '#212529',
+        bodyColor: '#212529',
+        borderColor: '#e9ecef',
+        borderWidth: 1,
+        cornerRadius: 12,
+        padding: 12,
+        callbacks: {
+          label: function(context: any) {
+            const dataIndex = context.dataIndex;
+            const typeName = context.chart.data.labels[dataIndex];
+            
+            // Get data from both datasets for this type
+            const correctData = context.chart.data.datasets[0].data;
+            const wrongData = context.chart.data.datasets[1].data;
+            
+            const correct = correctData[dataIndex];
+            const wrong = wrongData[dataIndex];
+            const total = correct + wrong;
+            const accuracy = total > 0 ? ((correct / total) * 100).toFixed(1) : '0';
+            
+            return [
+              `📚 Type: ${typeName}`,
+              `✅ Correct: ${correct}`,
+              `❌ Incorrect: ${wrong}`,
+              `📈 Accuracy: ${accuracy}%`
+            ];
+          }
+        }
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
+          },
+        },
+      },
+      y: {
+        type: 'category' as const,
+        stacked: true,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
           },
         },
       },

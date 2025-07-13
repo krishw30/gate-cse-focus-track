@@ -24,6 +24,8 @@ import {
   buildSubjectChart,
   processProgressData,
   buildProgressChart,
+  processTypeAnalysis,
+  buildTypeChart,
 } from "@/lib/chartUtils";
 
 ChartJS.register(
@@ -101,6 +103,9 @@ const Analysis = () => {
   const progressData = processProgressData(revisions, timeframe);
   const progressChart = buildProgressChart(progressData);
 
+  const typeAnalysis = processTypeAnalysis(revisions);
+  const typeChart = buildTypeChart(typeAnalysis);
+
   const totalRevisions = revisions.length;
   const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
   const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
@@ -144,8 +149,9 @@ const Analysis = () => {
       </div>
 
       <Tabs defaultValue="subjects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 bg-muted rounded-xl p-1">
+        <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1">
           <TabsTrigger value="subjects" className="font-medium rounded-lg">Subject Analysis</TabsTrigger>
+          <TabsTrigger value="types" className="font-medium rounded-lg">Analysis by Type</TabsTrigger>
           <TabsTrigger value="progress" className="font-medium rounded-lg">Progress Tracking</TabsTrigger>
         </TabsList>
 
@@ -163,6 +169,40 @@ const Analysis = () => {
                   data={subjectChart.data}
                   options={subjectChart.options}
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="types" className="space-y-6">
+          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+            <CardHeader>
+              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Analysis by Type</CardTitle>
+              <CardDescription>
+                Performance breakdown by revision type (DPP, PYQ, Mock Test, Other)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <Bar
+                  data={typeChart.data}
+                  options={typeChart.options}
+                />
+              </div>
+              
+              {/* Type Distribution Summary */}
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                {Object.entries(typeAnalysis).map(([type, stats]) => (
+                  <div key={type} className="text-center">
+                    <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>
+                      {stats.attempts}
+                    </div>
+                    <div className="text-sm text-muted-foreground">{type}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {stats.accuracy.toFixed(1)}% accuracy
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

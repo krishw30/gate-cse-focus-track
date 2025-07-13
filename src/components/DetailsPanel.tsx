@@ -118,10 +118,10 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
     let data: any[] = [];
 
     if (currentView === 'revisions' && selectedSubject) {
-      csvContent = 'Date,Subject,Total Questions,Correct,Wrong,Accuracy (%),Remarks\n';
+      csvContent = 'Date,Subject,Type,Total Questions,Correct,Wrong,Accuracy (%),Remarks\n';
       data = selectedSubject.revisions;
     } else {
-      csvContent = 'Date,Subject,Total Questions,Correct,Wrong,Accuracy (%),Remarks\n';
+      csvContent = 'Date,Subject,Type,Total Questions,Correct,Wrong,Accuracy (%),Remarks\n';
       data = revisions;
     }
 
@@ -129,7 +129,7 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
       const accuracy = revision.numQuestions > 0 ? 
         ((revision.numCorrect / revision.numQuestions) * 100).toFixed(1) : '0';
       const wrong = revision.numQuestions - revision.numCorrect;
-      csvContent += `${revision.date},"${revision.subject}",${revision.numQuestions},${revision.numCorrect},${wrong},${accuracy},"${revision.remarks || ''}"\n`;
+      csvContent += `${revision.date},"${revision.subject}","${revision.type || 'Other'}",${revision.numQuestions},${revision.numCorrect},${wrong},${accuracy},"${revision.remarks || ''}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -278,20 +278,24 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
                           {((revision.numCorrect / revision.numQuestions) * 100).toFixed(1)}%
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <div className="text-muted-foreground">Total</div>
-                          <div className="font-medium">{revision.numQuestions}</div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Correct</div>
-                          <div className="font-medium text-green-600">{revision.numCorrect}</div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Wrong</div>
-                          <div className="font-medium text-red-500">{revision.numQuestions - revision.numCorrect}</div>
-                        </div>
-                      </div>
+                       <div className="grid grid-cols-4 gap-4 text-sm">
+                         <div>
+                           <div className="text-muted-foreground">Type</div>
+                           <div className="font-medium">{revision.type || "Other"}</div>
+                         </div>
+                         <div>
+                           <div className="text-muted-foreground">Total</div>
+                           <div className="font-medium">{revision.numQuestions}</div>
+                         </div>
+                         <div>
+                           <div className="text-muted-foreground">Correct</div>
+                           <div className="font-medium text-green-600">{revision.numCorrect}</div>
+                         </div>
+                         <div>
+                           <div className="text-muted-foreground">Wrong</div>
+                           <div className="font-medium text-red-500">{revision.numQuestions - revision.numCorrect}</div>
+                         </div>
+                       </div>
                       {revision.remarks && (
                         <div className="text-sm text-muted-foreground border-l-2 border-muted pl-2">
                           {revision.remarks}
