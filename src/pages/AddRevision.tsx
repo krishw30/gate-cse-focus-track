@@ -32,6 +32,7 @@ const revisionTypes = [
   "DPP",
   "PYQ", 
   "Mock Test",
+  "Unacademy Workbook",
   "Other"
 ];
 
@@ -39,9 +40,11 @@ const AddRevision = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [subject, setSubject] = useState("");
   const [type, setType] = useState("");
+  const [customType, setCustomType] = useState("");
   const [totalQuestions, setTotalQuestions] = useState("");
   const [correctAnswers, setCorrectAnswers] = useState("");
   const [remarks, setRemarks] = useState("");
+  const [weakTopics, setWeakTopics] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -52,6 +55,15 @@ const AddRevision = () => {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (type === "Other" && !customType.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter custom type when 'Other' is selected",
         variant: "destructive"
       });
       return;
@@ -69,15 +81,31 @@ const AddRevision = () => {
     setIsLoading(true);
     
     try {
+      // Save revision data
+      const finalType = type === "Other" ? customType : type;
       await addDoc(collection(db, "revisions"), {
         date: format(date, "yyyy-MM-dd"),
         subject,
-        type,
+        type: finalType,
         numQuestions: parseInt(totalQuestions),
         numCorrect: parseInt(correctAnswers),
         remarks,
         timestamp: serverTimestamp()
       });
+
+      // Save weak topics if provided
+      if (weakTopics.trim()) {
+        const topicsArray = weakTopics.split(',').map(topic => topic.trim()).filter(topic => topic);
+        for (const topic of topicsArray) {
+          await addDoc(collection(db, "weak topics"), {
+            topic,
+            subject,
+            status: "weak",
+            isResolved: false,
+            timestamp: serverTimestamp()
+          });
+        }
+      }
 
       toast({
         title: "Success",
@@ -88,9 +116,11 @@ const AddRevision = () => {
       setDate(new Date());
       setSubject("");
       setType("");
+      setCustomType("");
       setTotalQuestions("");
       setCorrectAnswers("");
       setRemarks("");
+      setWeakTopics("");
     } catch (error) {
       toast({
         title: "Error",
@@ -166,6 +196,18 @@ const AddRevision = () => {
           </Select>
         </div>
 
+        {type === "Other" && (
+          <div className="space-y-2">
+            <Label htmlFor="customType">Enter custom type:</Label>
+            <Input
+              id="customType"
+              value={customType}
+              onChange={(e) => setCustomType(e.target.value)}
+              placeholder="Enter custom revision type"
+            />
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="totalQuestions">Total Questions</Label>
           <Input
@@ -187,6 +229,16 @@ const AddRevision = () => {
             value={correctAnswers}
             onChange={(e) => setCorrectAnswers(e.target.value)}
             placeholder="Enter correct answers"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="weakTopics">Weak Topics (comma-separated):</Label>
+          <Input
+            id="weakTopics"
+            value={weakTopics}
+            onChange={(e) => setWeakTopics(e.target.value)}
+            placeholder="e.g., Recursion, Pointers, Operators"
           />
         </div>
 

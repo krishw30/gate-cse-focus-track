@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import DetailsPanel from "@/components/DetailsPanel";
+import WeakTopicsModal from "@/components/WeakTopicsModal";
 import {
   RevisionData,
   processSubjectAnalysis,
@@ -115,7 +116,10 @@ const Analysis = () => {
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold font-semibold">Analysis Dashboard</h1>
-        <DetailsPanel revisions={revisions} />
+        <div className="flex gap-3">
+          <WeakTopicsModal />
+          <DetailsPanel revisions={revisions} />
+        </div>
       </div>
       
       {/* Summary Cards */}
