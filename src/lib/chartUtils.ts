@@ -7,6 +7,7 @@ export interface RevisionData {
   numCorrect: number;
   type: "DPP" | "PYQ" | "Mock Test" | "Other";
   remarks: string;
+  timeSpentMinutes?: number;
 }
 
 export interface SubjectAnalysis {

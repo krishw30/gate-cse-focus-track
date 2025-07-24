@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import DetailsPanel from "@/components/DetailsPanel";
 import WeakTopicsModal from "@/components/WeakTopicsModal";
+import TimeInsightsModal from "@/components/TimeInsightsModal";
 import {
   RevisionData,
   processSubjectAnalysis,
@@ -118,6 +119,7 @@ const Analysis = () => {
         <h1 className="text-3xl font-bold font-semibold">Analysis Dashboard</h1>
         <div className="flex gap-3">
           <WeakTopicsModal />
+          <TimeInsightsModal revisions={revisions} />
           <DetailsPanel revisions={revisions} />
         </div>
       </div>

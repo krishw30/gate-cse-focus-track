@@ -295,12 +295,33 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
                            <div className="text-muted-foreground">Wrong</div>
                            <div className="font-medium text-red-500">{revision.numQuestions - revision.numCorrect}</div>
                          </div>
-                       </div>
-                      {revision.remarks && (
-                        <div className="text-sm text-muted-foreground border-l-2 border-muted pl-2">
-                          {revision.remarks}
                         </div>
-                      )}
+                        
+                        {/* Time Spent and Efficiency */}
+                        <div className="grid grid-cols-2 gap-4 text-sm pt-2 border-t">
+                          <div>
+                            <div className="text-muted-foreground">Time Spent</div>
+                            <div className="font-medium">
+                              {revision.timeSpentMinutes && revision.timeSpentMinutes > 0 
+                                ? `${revision.timeSpentMinutes} minutes` 
+                                : "—"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">Efficiency</div>
+                            <div className="font-medium">
+                              {revision.timeSpentMinutes && revision.timeSpentMinutes > 0 
+                                ? `${(revision.numQuestions / (revision.timeSpentMinutes / 60)).toFixed(1)} q/hr`
+                                : "—"}
+                            </div>
+                          </div>
+                        </div>
+                        
+                       {revision.remarks && (
+                         <div className="text-sm text-muted-foreground border-l-2 border-muted pl-2 mt-2">
+                           {revision.remarks}
+                         </div>
+                       )}
                     </div>
                   </CardContent>
                 </Card>
