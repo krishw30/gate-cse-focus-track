@@ -28,6 +28,8 @@ import {
   buildProgressChart,
   processTypeAnalysis,
   buildTypeChart,
+  processTimeAnalysis,
+  buildTimeChart,
 } from "@/lib/chartUtils";
 
 ChartJS.register(
@@ -108,6 +110,9 @@ const Analysis = () => {
   const typeAnalysis = processTypeAnalysis(revisions);
   const typeChart = buildTypeChart(typeAnalysis);
 
+  const timeAnalysis = processTimeAnalysis(revisions);
+  const timeChart = buildTimeChart(timeAnalysis);
+
   const totalRevisions = revisions.length;
   const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
   const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
@@ -155,10 +160,11 @@ const Analysis = () => {
       </div>
 
       <Tabs defaultValue="subjects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1">
+        <TabsList className="grid w-full grid-cols-4 bg-muted rounded-xl p-1">
           <TabsTrigger value="subjects" className="font-medium rounded-lg">Subject Analysis</TabsTrigger>
           <TabsTrigger value="types" className="font-medium rounded-lg">Analysis by Type</TabsTrigger>
           <TabsTrigger value="progress" className="font-medium rounded-lg">Progress Tracking</TabsTrigger>
+          <TabsTrigger value="time" className="font-medium rounded-lg">Time Analysis</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subjects" className="space-y-6">
@@ -259,6 +265,33 @@ const Analysis = () => {
                   options={progressChart.options}
                 />
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="time" className="space-y-6">
+          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <CardHeader>
+              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Time Analysis</CardTitle>
+              <CardDescription>
+                Time spent per subject with efficiency metrics (questions per hour)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {Object.keys(timeAnalysis).length === 0 ? (
+                <div className="text-center text-muted-foreground py-12">
+                  <div className="mb-4">⏱️</div>
+                  <h3 className="text-lg font-medium mb-2">No time data available</h3>
+                  <p>Add revisions with time tracking to see time analysis.</p>
+                </div>
+              ) : (
+                <div className="h-[400px]">
+                  <Bar
+                    data={timeChart.data}
+                    options={timeChart.options}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

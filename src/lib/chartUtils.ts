@@ -489,6 +489,146 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
   return { data, options };
 };
 
+// Process revisions data for time analysis
+export const processTimeAnalysis = (revisions: RevisionData[]) => {
+  const timeAnalysis = revisions
+    .filter(revision => revision.timeSpentMinutes && revision.timeSpentMinutes > 0)
+    .reduce((acc, revision) => {
+      if (!acc[revision.subject]) {
+        acc[revision.subject] = {
+          totalTimeMinutes: 0,
+          totalQuestions: 0,
+          attempts: 0,
+          efficiency: 0,
+        };
+      }
+      
+      acc[revision.subject].totalTimeMinutes += revision.timeSpentMinutes!;
+      acc[revision.subject].totalQuestions += revision.numQuestions;
+      acc[revision.subject].attempts += 1;
+      acc[revision.subject].efficiency = 
+        acc[revision.subject].totalQuestions / (acc[revision.subject].totalTimeMinutes / 60);
+      
+      return acc;
+    }, {} as Record<string, { totalTimeMinutes: number; totalQuestions: number; attempts: number; efficiency: number }>);
+
+  return timeAnalysis;
+};
+
+// Build horizontal bar chart for time analysis
+export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
+  const subjects = Object.keys(timeAnalysis).sort();
+  const timeData = subjects.map(subject => timeAnalysis[subject].totalTimeMinutes);
+
+  const data = {
+    labels: subjects,
+    datasets: [
+      {
+        label: 'Time Spent (minutes)',
+        data: timeData,
+        backgroundColor: '#6f42c1', // Purple for time
+        borderColor: '#6f42c1',
+        borderWidth: 0,
+        borderRadius: 4,
+        borderSkipped: false,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
+          },
+        },
+      },
+      y: {
+        type: 'category' as const,
+        grid: {
+          color: 'rgba(0,0,0,0.05)',
+        },
+        ticks: {
+          color: '#6c757d',
+          font: {
+            family: 'Inter, system-ui',
+            weight: 500,
+          },
+        },
+      },
+    },
+    interaction: {
+      mode: 'point' as const,
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          font: {
+            family: 'Inter, system-ui',
+            weight: 600,
+          },
+          color: '#212529',
+        },
+      },
+      tooltip: {
+        backgroundColor: '#ffffff',
+        titleColor: '#212529',
+        bodyColor: '#212529',
+        borderColor: '#e9ecef',
+        borderWidth: 1,
+        cornerRadius: 12,
+        padding: 12,
+        callbacks: {
+          title: function(context: any) {
+            return `⏱️ Subject: ${context[0].label}`;
+          },
+          label: function(context: any) {
+            const subjectName = context.label;
+            const subjectStats = timeAnalysis[subjectName];
+            
+            if (!subjectStats) return [];
+            
+            const timeMinutes = subjectStats.totalTimeMinutes;
+            const questions = subjectStats.totalQuestions;
+            const efficiency = subjectStats.efficiency.toFixed(1);
+            
+            return [
+              `⏰ Time Spent: ${timeMinutes} minutes`,
+              `❓ Questions Attempted: ${questions}`,
+              `⚡ Efficiency: ${efficiency} questions/hour`
+            ];
+          },
+          labelColor: function() {
+            return {
+              borderColor: '#6f42c1',
+              backgroundColor: '#6f42c1'
+            };
+          }
+        }
+      },
+      onHover: (event: any, elements: any) => {
+        if (event.native) {
+          event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+        }
+      }
+    },
+  };
+
+  return { data, options };
+};
+
 // Helper function to get week number
 function getWeekNumber(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
