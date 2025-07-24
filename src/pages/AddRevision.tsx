@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import TimerModal from "@/components/TimerModal";
 
 const subjects = [
   "Engineering Mathematics",
@@ -48,46 +47,7 @@ const AddRevision = () => {
   const [remarks, setRemarks] = useState("");
   const [weakTopics, setWeakTopics] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [timerModalOpen, setTimerModalOpen] = useState(false);
-  const [activeSession, setActiveSession] = useState<string | null>(null);
   const { toast } = useToast();
-
-  // Check for active session on component mount
-  useEffect(() => {
-    const sessionData = localStorage.getItem('revisionSession');
-    if (sessionData) {
-      const session = JSON.parse(sessionData);
-      setActiveSession(session.subject);
-    }
-  }, []);
-
-  const handleStartSession = (selectedSubject: string) => {
-    setActiveSession(selectedSubject);
-  };
-
-  const handleEndSession = () => {
-    const sessionData = localStorage.getItem('revisionSession');
-    if (sessionData) {
-      const session = JSON.parse(sessionData);
-      const startTime = new Date(session.startTime);
-      const endTime = new Date();
-      const timeSpent = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-      
-      // Prefill form with session data
-      setSubject(session.subject);
-      setDate(startTime);
-      setTimeSpentMinutes(timeSpent.toString());
-      
-      // Clear session
-      localStorage.removeItem('revisionSession');
-      setActiveSession(null);
-      
-      toast({
-        title: "Session Ended",
-        description: `Form prefilled with ${timeSpent} minutes for ${session.subject}`,
-      });
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,32 +137,7 @@ const AddRevision = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-center flex-1">Add Revision</h1>
-        <div className="flex gap-2">
-          {activeSession && (
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={handleEndSession}
-              className="flex items-center gap-2"
-            >
-              <Clock className="w-4 h-4" />
-              End Session ({activeSession})
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setTimerModalOpen(true)}
-            disabled={!!activeSession}
-            className="flex items-center gap-2"
-          >
-            <Clock className="w-4 h-4" />
-            {activeSession ? "Session Active" : "Start Timer"}
-          </Button>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold mb-6 text-center">Add Revision</h1>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
@@ -337,12 +272,6 @@ const AddRevision = () => {
           {isLoading ? "Saving..." : "Save Revision"}
         </Button>
       </form>
-
-      <TimerModal 
-        open={timerModalOpen}
-        onOpenChange={setTimerModalOpen}
-        onStartSession={handleStartSession}
-      />
     </div>
   );
 };
