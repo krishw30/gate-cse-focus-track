@@ -43,6 +43,7 @@ const AddRevision = () => {
   const [customType, setCustomType] = useState("");
   const [totalQuestions, setTotalQuestions] = useState("");
   const [correctAnswers, setCorrectAnswers] = useState("");
+  const [timeSpentMinutes, setTimeSpentMinutes] = useState("");
   const [remarks, setRemarks] = useState("");
   const [weakTopics, setWeakTopics] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -89,6 +90,7 @@ const AddRevision = () => {
         type: finalType,
         numQuestions: parseInt(totalQuestions),
         numCorrect: parseInt(correctAnswers),
+        timeSpentMinutes: parseInt(timeSpentMinutes) || 0,
         remarks,
         timestamp: serverTimestamp()
       });
@@ -119,6 +121,7 @@ const AddRevision = () => {
       setCustomType("");
       setTotalQuestions("");
       setCorrectAnswers("");
+      setTimeSpentMinutes("");
       setRemarks("");
       setWeakTopics("");
     } catch (error) {
@@ -229,6 +232,18 @@ const AddRevision = () => {
             value={correctAnswers}
             onChange={(e) => setCorrectAnswers(e.target.value)}
             placeholder="Enter correct answers"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="timeSpentMinutes">Time Spent (minutes)</Label>
+          <Input
+            id="timeSpentMinutes"
+            type="number"
+            min="0"
+            value={timeSpentMinutes}
+            onChange={(e) => setTimeSpentMinutes(e.target.value)}
+            placeholder="Enter time spent"
           />
         </div>
 
