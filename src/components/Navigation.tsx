@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, BarChart3 } from "lucide-react";
+import { Home, PlusCircle, BarChart3 } from "lucide-react";
 
 const Navigation = () => {
   return (
@@ -14,6 +14,18 @@ const Navigation = () => {
           <div className="flex items-center space-x-4">
             <NavLink
               to="/"
+              className={({ isActive }) =>
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              }
+            >
+              <Button variant="ghost" size="sm">
+                <Home className="w-4 h-4 mr-2" />
+                Home
+              </Button>
+            </NavLink>
+
+            <NavLink
+              to="/add-revision"
               className={({ isActive }) =>
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               }
