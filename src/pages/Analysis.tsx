@@ -133,30 +133,30 @@ const Analysis = () => {
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Revisions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>{totalRevisions}</div>
+            <div className="text-2xl font-bold text-chart-accent">{totalRevisions}</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Questions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>{totalQuestions}</div>
+            <div className="text-2xl font-bold text-chart-accent">{totalQuestions}</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Overall Accuracy</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>{overallAccuracy}%</div>
+            <div className="text-2xl font-bold text-chart-accent">{overallAccuracy}%</div>
           </CardContent>
         </Card>
       </div>
@@ -170,9 +170,9 @@ const Analysis = () => {
         </TabsList>
 
         <TabsContent value="subjects" className="space-y-6">
-          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <CardHeader>
-              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Subject-wise Performance</CardTitle>
+              <CardTitle className="font-semibold text-foreground">Subject-wise Performance</CardTitle>
               <CardDescription>
                 Stacked horizontal bars showing correct vs wrong answers for each subject
               </CardDescription>
@@ -189,9 +189,9 @@ const Analysis = () => {
         </TabsContent>
 
         <TabsContent value="types" className="space-y-6">
-          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
+          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.06)' }}>
             <CardHeader>
-              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Analysis by Type</CardTitle>
+              <CardTitle className="font-semibold text-foreground">Analysis by Type</CardTitle>
               <CardDescription>
                 Performance breakdown by revision type (DPP, PYQ, Mock Test, Other)
               </CardDescription>
@@ -207,11 +207,11 @@ const Analysis = () => {
               {/* Type Distribution Summary */}
               <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Object.entries(typeAnalysis).map(([type, stats]) => (
-                  <div key={type} className="text-center">
-                    <div className="text-2xl font-bold" style={{ color: '#0069d9' }}>
+                  <div key={type} className="text-center p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-all duration-200">
+                    <div className="text-2xl font-bold text-chart-accent">
                       {stats.attempts}
                     </div>
-                    <div className="text-sm text-muted-foreground">{type}</div>
+                    <div className="text-sm text-muted-foreground font-medium">{type}</div>
                     <div className="text-xs text-muted-foreground">
                       {stats.accuracy.toFixed(1)}% accuracy
                     </div>
@@ -223,9 +223,9 @@ const Analysis = () => {
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-6">
-          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <CardHeader>
-              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Progress Over Time</CardTitle>
+              <CardTitle className="font-semibold text-foreground">Progress Over Time</CardTitle>
               <CardDescription>
                 Track your questions attempted and correct answers over time
               </CardDescription>
@@ -236,8 +236,8 @@ const Analysis = () => {
                   variant={timeframe === 'daily' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTimeframe('daily')}
-                  className="font-medium transition-all hover:scale-105"
-                  style={timeframe === 'daily' ? { backgroundColor: '#0069d9', borderColor: '#0069d9' } : {}}
+                  className="font-medium transition-all duration-200 hover:scale-105"
+                  style={timeframe === 'daily' ? { backgroundColor: 'hsl(216, 92%, 43%)', borderColor: 'hsl(216, 92%, 43%)' } : {}}
                 >
                   Daily
                 </Button>
@@ -245,8 +245,8 @@ const Analysis = () => {
                   variant={timeframe === 'weekly' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTimeframe('weekly')}
-                  className="font-medium transition-all hover:scale-105"
-                  style={timeframe === 'weekly' ? { backgroundColor: '#0069d9', borderColor: '#0069d9' } : {}}
+                  className="font-medium transition-all duration-200 hover:scale-105"
+                  style={timeframe === 'weekly' ? { backgroundColor: 'hsl(216, 92%, 43%)', borderColor: 'hsl(216, 92%, 43%)' } : {}}
                 >
                   Weekly
                 </Button>
@@ -254,8 +254,8 @@ const Analysis = () => {
                   variant={timeframe === 'monthly' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setTimeframe('monthly')}
-                  className="font-medium transition-all hover:scale-105"
-                  style={timeframe === 'monthly' ? { backgroundColor: '#0069d9', borderColor: '#0069d9' } : {}}
+                  className="font-medium transition-all duration-200 hover:scale-105"
+                  style={timeframe === 'monthly' ? { backgroundColor: 'hsl(216, 92%, 43%)', borderColor: 'hsl(216, 92%, 43%)' } : {}}
                 >
                   Monthly
                 </Button>
@@ -272,9 +272,9 @@ const Analysis = () => {
         </TabsContent>
 
         <TabsContent value="time" className="space-y-6">
-          <Card className="rounded-xl shadow-md border-0" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <CardHeader>
-              <CardTitle className="font-semibold" style={{ color: '#212529' }}>Time Analysis</CardTitle>
+              <CardTitle className="font-semibold text-foreground">Time Analysis</CardTitle>
               <CardDescription>
                 Time spent per subject with efficiency metrics (questions per hour)
               </CardDescription>
@@ -282,7 +282,7 @@ const Analysis = () => {
             <CardContent>
               {Object.keys(timeAnalysis).length === 0 ? (
                 <div className="text-center text-muted-foreground py-12">
-                  <div className="mb-4">⏱️</div>
+                  <div className="mb-4 text-4xl">⏱️</div>
                   <h3 className="text-lg font-medium mb-2">No time data available</h3>
                   <p>Add revisions with time tracking to see time analysis.</p>
                 </div>

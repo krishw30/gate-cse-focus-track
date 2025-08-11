@@ -162,36 +162,46 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
           Details ⤵︎
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="max-w-[420px] ml-auto h-full">
-        <DrawerHeader className="border-b">
+      <DrawerContent className="max-w-[420px] ml-auto h-full rounded-l-xl border-0 shadow-2xl bg-background">
+        <DrawerHeader className="border-b border-border bg-muted/30 rounded-tl-xl">
           <div className="flex items-center justify-between">
             {currentView !== 'periods' && (
-              <Button variant="ghost" size="sm" onClick={goBack} className="gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={goBack} 
+                className="gap-2 hover:bg-muted/50 transition-all duration-200 hover:scale-105"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
             )}
-            <DrawerTitle className="flex-1 text-center">
+            <DrawerTitle className="flex-1 text-center font-semibold text-lg">
               {currentView === 'periods' && 'Choose Period'}
               {currentView === 'subjects' && `Subjects in ${selectedPeriod?.period}`}
               {currentView === 'revisions' && `${selectedSubject?.subject} Details`}
             </DrawerTitle>
-            <Button variant="ghost" size="sm" onClick={exportCSV} className="gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={exportCSV} 
+              className="gap-2 hover:bg-muted/50 transition-all duration-200 hover:scale-105"
+            >
               <Download className="h-4 w-4" />
               CSV
             </Button>
           </div>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto p-4 bg-gradient-to-b from-background to-muted/20">
           {/* Level 1: Choose Period */}
           {currentView === 'periods' && (
             <div className="space-y-4">
               <Tabs value={timeframe} onValueChange={(v) => setTimeframe(v as TimeframeType)}>
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="daily">Daily</TabsTrigger>
-                  <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                  <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1">
+                  <TabsTrigger value="daily" className="font-medium rounded-lg transition-all duration-200">Daily</TabsTrigger>
+                  <TabsTrigger value="weekly" className="font-medium rounded-lg transition-all duration-200">Weekly</TabsTrigger>
+                  <TabsTrigger value="monthly" className="font-medium rounded-lg transition-all duration-200">Monthly</TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -199,7 +209,8 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
                 {periodData.map((period) => (
                   <Card 
                     key={period.period} 
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    className="cursor-pointer hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg rounded-xl border-0 shadow-sm"
+                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                     onClick={() => {
                       setSelectedPeriod(period);
                       setCurrentView('subjects');
@@ -208,17 +219,17 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-medium">{period.period}</div>
+                          <div className="font-semibold text-foreground">{period.period}</div>
                           <div className="text-sm text-muted-foreground">
                             {period.totalQuestions} questions • {period.accuracy.toFixed(1)}% accuracy
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="text-right text-sm">
-                            <div className="text-green-600 font-medium">{period.totalCorrect}</div>
-                            <div className="text-red-500">{period.totalWrong}</div>
+                            <div className="text-chart-correct font-semibold">{period.totalCorrect}</div>
+                            <div className="text-chart-wrong font-semibold">{period.totalWrong}</div>
                           </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground transform transition-transform duration-200 group-hover:translate-x-1" />
                         </div>
                       </div>
                     </CardContent>
@@ -234,7 +245,8 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
               {subjectData.map((subject) => (
                 <Card 
                   key={subject.subject} 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="cursor-pointer hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg rounded-xl border-0 shadow-sm group"
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                   onClick={() => {
                     setSelectedSubject(subject);
                     setCurrentView('revisions');
@@ -243,17 +255,17 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-medium">{subject.subject}</div>
+                        <div className="font-semibold text-foreground">{subject.subject}</div>
                         <div className="text-sm text-muted-foreground">
                           {subject.totalQuestions} questions • {subject.accuracy.toFixed(1)}% accuracy
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="text-right text-sm">
-                          <div className="text-green-600 font-medium">{subject.totalCorrect}</div>
-                          <div className="text-red-500">{subject.totalWrong}</div>
+                          <div className="text-chart-correct font-semibold">{subject.totalCorrect}</div>
+                          <div className="text-chart-wrong font-semibold">{subject.totalWrong}</div>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground transform transition-transform duration-200 group-hover:translate-x-1" />
                       </div>
                     </div>
                   </CardContent>
@@ -266,50 +278,50 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
           {currentView === 'revisions' && selectedSubject && (
             <div className="space-y-2">
               {selectedSubject.revisions.map((revision, index) => (
-                <Card key={index}>
+                <Card key={index} className="rounded-xl border-0 shadow-sm hover:shadow-md transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                   <CardContent className="p-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{revision.date}</span>
+                          <Calendar className="h-4 w-4 text-chart-accent" />
+                          <span className="font-semibold text-foreground">{revision.date}</span>
                         </div>
-                        <div className="text-sm font-medium">
+                        <div className="text-sm font-bold text-chart-accent bg-chart-accent/10 px-3 py-1 rounded-full">
                           {((revision.numCorrect / revision.numQuestions) * 100).toFixed(1)}%
                         </div>
                       </div>
                        <div className="grid grid-cols-4 gap-4 text-sm">
-                         <div>
-                           <div className="text-muted-foreground">Type</div>
-                           <div className="font-medium">{revision.type || "Other"}</div>
+                         <div className="text-center p-2 bg-muted/30 rounded-lg">
+                           <div className="text-muted-foreground text-xs uppercase tracking-wide">Type</div>
+                           <div className="font-semibold text-foreground">{revision.type || "Other"}</div>
                          </div>
-                         <div>
-                           <div className="text-muted-foreground">Total</div>
-                           <div className="font-medium">{revision.numQuestions}</div>
+                         <div className="text-center p-2 bg-muted/30 rounded-lg">
+                           <div className="text-muted-foreground text-xs uppercase tracking-wide">Total</div>
+                           <div className="font-semibold text-foreground">{revision.numQuestions}</div>
                          </div>
-                         <div>
-                           <div className="text-muted-foreground">Correct</div>
-                           <div className="font-medium text-green-600">{revision.numCorrect}</div>
+                         <div className="text-center p-2 bg-chart-correct/10 rounded-lg">
+                           <div className="text-muted-foreground text-xs uppercase tracking-wide">Correct</div>
+                           <div className="font-semibold text-chart-correct">{revision.numCorrect}</div>
                          </div>
-                         <div>
-                           <div className="text-muted-foreground">Wrong</div>
-                           <div className="font-medium text-red-500">{revision.numQuestions - revision.numCorrect}</div>
+                         <div className="text-center p-2 bg-chart-wrong/10 rounded-lg">
+                           <div className="text-muted-foreground text-xs uppercase tracking-wide">Wrong</div>
+                           <div className="font-semibold text-chart-wrong">{revision.numQuestions - revision.numCorrect}</div>
                          </div>
                         </div>
                         
                         {/* Time Spent and Efficiency */}
-                        <div className="grid grid-cols-2 gap-4 text-sm pt-2 border-t">
-                          <div>
-                            <div className="text-muted-foreground">Time Spent</div>
-                            <div className="font-medium">
+                        <div className="grid grid-cols-2 gap-4 text-sm pt-3 border-t border-muted">
+                          <div className="text-center p-2 bg-muted/20 rounded-lg">
+                            <div className="text-muted-foreground text-xs uppercase tracking-wide">Time Spent</div>
+                            <div className="font-semibold text-foreground">
                               {revision.timeSpentMinutes && revision.timeSpentMinutes > 0 
                                 ? `${revision.timeSpentMinutes} minutes` 
                                 : "—"}
                             </div>
                           </div>
-                          <div>
-                            <div className="text-muted-foreground">Efficiency</div>
-                            <div className="font-medium">
+                          <div className="text-center p-2 bg-muted/20 rounded-lg">
+                            <div className="text-muted-foreground text-xs uppercase tracking-wide">Efficiency</div>
+                            <div className="font-semibold text-foreground">
                               {revision.timeSpentMinutes && revision.timeSpentMinutes > 0 
                                 ? `${(revision.numQuestions / (revision.timeSpentMinutes / 60)).toFixed(1)} q/hr`
                                 : "—"}
@@ -318,8 +330,9 @@ const DetailsPanel = ({ revisions }: DetailsPanelProps) => {
                         </div>
                         
                        {revision.remarks && (
-                         <div className="text-sm text-muted-foreground border-l-2 border-muted pl-2 mt-2">
-                           {revision.remarks}
+                         <div className="text-sm text-muted-foreground border-l-2 border-chart-accent pl-3 mt-3 bg-muted/20 rounded-r-lg py-2">
+                           <div className="text-xs uppercase tracking-wide mb-1">Remarks</div>
+                           <div className="italic">{revision.remarks}</div>
                          </div>
                        )}
                     </div>

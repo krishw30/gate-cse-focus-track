@@ -62,8 +62,8 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
       {
         label: 'Correct Answers',
         data: correctData,
-        backgroundColor: '#20c997', // Vibrant teal
-        borderColor: '#20c997',
+        backgroundColor: 'hsl(166, 64%, 48%)', // #20c997 - teal
+        borderColor: 'hsl(166, 64%, 38%)',
         borderWidth: 0,
         borderRadius: 4,
         borderSkipped: false,
@@ -71,8 +71,8 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
       {
         label: 'Incorrect Answers',
         data: wrongData,
-        backgroundColor: '#ff6b6b', // Vibrant coral/red
-        borderColor: '#ff6b6b',
+        backgroundColor: 'hsl(9, 100%, 70%)', // #ff6b6b - coral
+        borderColor: 'hsl(9, 100%, 60%)',
         borderWidth: 0,
         borderRadius: 4,
         borderSkipped: false,
@@ -92,7 +92,7 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
           color: 'rgba(0,0,0,0.05)',
         },
         ticks: {
-          color: '#6c757d',
+          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
           font: {
             family: 'Inter, system-ui',
             weight: 500,
@@ -106,7 +106,7 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
           color: 'rgba(0,0,0,0.05)',
         },
         ticks: {
-          color: '#6c757d',
+          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
           font: {
             family: 'Inter, system-ui',
             weight: 500,
@@ -126,7 +126,7 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
             family: 'Inter, system-ui',
             weight: 600,
           },
-          color: '#212529',
+          color: 'hsl(222.2, 84%, 4.9%)', // foreground color
         },
       },
       tooltip: {
@@ -230,8 +230,8 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
       {
         label: 'Correct Answers',
         data: correctData,
-        backgroundColor: '#20c997', // Vibrant teal
-        borderColor: '#20c997',
+        backgroundColor: 'hsl(166, 64%, 48%)', // #20c997 - teal
+        borderColor: 'hsl(166, 64%, 38%)',
         borderWidth: 0,
         borderRadius: 4,
         borderSkipped: false,
@@ -239,8 +239,8 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
       {
         label: 'Incorrect Answers',
         data: wrongData,
-        backgroundColor: '#ff6b6b', // Vibrant coral/red
-        borderColor: '#ff6b6b',
+        backgroundColor: 'hsl(9, 100%, 70%)', // #ff6b6b - coral
+        borderColor: 'hsl(9, 100%, 60%)',
         borderWidth: 0,
         borderRadius: 4,
         borderSkipped: false,
@@ -260,7 +260,7 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
           color: 'rgba(0,0,0,0.05)',
         },
         ticks: {
-          color: '#6c757d',
+          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
           font: {
             family: 'Inter, system-ui',
             weight: 500,
@@ -274,7 +274,7 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
           color: 'rgba(0,0,0,0.05)',
         },
         ticks: {
-          color: '#6c757d',
+          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
           font: {
             family: 'Inter, system-ui',
             weight: 500,
@@ -294,7 +294,7 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
             family: 'Inter, system-ui',
             weight: 600,
           },
-          color: '#212529',
+          color: 'hsl(222.2, 84%, 4.9%)', // foreground
         },
       },
       tooltip: {
@@ -526,8 +526,8 @@ export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
       {
         label: 'Time Spent (minutes)',
         data: timeData,
-        backgroundColor: '#6f42c1', // Purple for time
-        borderColor: '#6f42c1',
+        backgroundColor: 'hsl(267, 57%, 67%)', // chart-purple
+        borderColor: 'hsl(267, 57%, 57%)',
         borderWidth: 0,
         borderRadius: 4,
         borderSkipped: false,
@@ -546,7 +546,7 @@ export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
           color: 'rgba(0,0,0,0.05)',
         },
         ticks: {
-          color: '#6c757d',
+          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
           font: {
             family: 'Inter, system-ui',
             weight: 500,
@@ -559,7 +559,7 @@ export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
           color: 'rgba(0,0,0,0.05)',
         },
         ticks: {
-          color: '#6c757d',
+          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
           font: {
             family: 'Inter, system-ui',
             weight: 500,
@@ -579,7 +579,7 @@ export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
             family: 'Inter, system-ui',
             weight: 600,
           },
-          color: '#212529',
+          color: 'hsl(222.2, 84%, 4.9%)', // foreground
         },
       },
       tooltip: {

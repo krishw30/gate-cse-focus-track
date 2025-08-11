@@ -38,13 +38,18 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
     
-    /* Chart colors */
-    --chart-teal: 174 72% 56%;
-    --chart-coral: 14 100% 70%;
-    --chart-blue: 216 92% 65%;
+    /* Chart colors - Updated to match requirements */
+    --chart-teal: 166 64% 48%;      /* #20c997 - teal for correct answers */
+    --chart-coral: 9 100% 70%;      /* #ff6b6b - coral for wrong answers */
+    --chart-blue: 216 92% 43%;      /* #0069d9 - accent blue */
     --chart-purple: 267 57% 67%;
     --chart-green: 142 71% 45%;
     --chart-orange: 25 95% 65%;
+    
+    /* Additional semantic chart colors */
+    --chart-correct: 166 64% 48%;    /* #20c997 */
+    --chart-wrong: 9 100% 70%;       /* #ff6b6b */
+    --chart-accent: 216 92% 43%;     /* #0069d9 */
 
     --sidebar-background: 0 0% 98%;
 
