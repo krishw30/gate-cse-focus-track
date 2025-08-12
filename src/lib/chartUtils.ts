@@ -48,7 +48,7 @@ export const processSubjectAnalysis = (revisions: RevisionData[]): SubjectAnalys
 };
 
 // Build stacked horizontal bar chart for subjects
-export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis, onChartClick?: (subject: string) => void) => {
+export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
   // Sort subjects alphabetically to ensure consistent tooltip matching
   const subjects = Object.keys(subjectAnalysis).sort();
   const correctData = subjects.map(subject => subjectAnalysis[subject].totalCorrect);
@@ -184,14 +184,6 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis, onChartClick
         if (event.native) {
           event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
         }
-      },
-      onClick: (event: any, elements: any) => {
-        if (elements.length > 0 && onChartClick) {
-          const elementIndex = elements[0].index;
-          const subjects = Object.keys(subjectAnalysis).sort();
-          const subject = subjects[elementIndex];
-          onChartClick(subject);
-        }
       }
     },
   };
@@ -225,7 +217,7 @@ export const processTypeAnalysis = (revisions: RevisionData[]) => {
 };
 
 // Build stacked horizontal bar chart for types
-export const buildTypeChart = (typeAnalysis: SubjectAnalysis, onChartClick?: (type: string) => void) => {
+export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
   const types = Object.keys(typeAnalysis).sort();
   const correctData = types.map(type => typeAnalysis[type].totalCorrect);
   const wrongData = types.map(type => 
@@ -356,14 +348,6 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis, onChartClick?: (ty
       onHover: (event: any, elements: any) => {
         if (event.native) {
           event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
-        }
-      },
-      onClick: (event: any, elements: any) => {
-        if (elements.length > 0 && onChartClick) {
-          const elementIndex = elements[0].index;
-          const types = Object.keys(typeAnalysis).sort();
-          const type = types[elementIndex];
-          onChartClick(type);
         }
       }
     },

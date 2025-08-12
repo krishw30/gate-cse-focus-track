@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useNavigate } from "react-router-dom";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,9 +17,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import DetailsPanel from "@/components/DetailsPanel";
 import WeakTopicsModal from "@/components/WeakTopicsModal";
 import TimeInsightsModal from "@/components/TimeInsightsModal";
-import { BarChart3, HelpCircle } from "lucide-react";
+import QuestionsModal from "@/components/QuestionsModal";
 import {
   RevisionData,
   processSubjectAnalysis,
@@ -49,7 +49,6 @@ const Analysis = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRevisions = async () => {
@@ -103,30 +102,14 @@ const Analysis = () => {
     );
   }
 
-  const handleSubjectClick = (subject: string) => {
-    navigate(`/detail?source=revisions&subject=${encodeURIComponent(subject)}`);
-  };
-
-  const handleTypeClick = (type: string) => {
-    navigate(`/detail?source=revisions&type=${encodeURIComponent(type)}`);
-  };
-
-  const handleDetailClick = () => {
-    navigate('/detail?source=revisions');
-  };
-
-  const handleQuestionsClick = () => {
-    navigate('/detail?source=questions');
-  };
-
   const subjectAnalysis = processSubjectAnalysis(revisions);
-  const subjectChart = buildSubjectChart(subjectAnalysis, handleSubjectClick);
+  const subjectChart = buildSubjectChart(subjectAnalysis);
   
   const progressData = processProgressData(revisions, timeframe);
   const progressChart = buildProgressChart(progressData);
 
   const typeAnalysis = processTypeAnalysis(revisions);
-  const typeChart = buildTypeChart(typeAnalysis, handleTypeClick);
+  const typeChart = buildTypeChart(typeAnalysis);
 
   const timeAnalysis = processTimeAnalysis(revisions);
   const timeChart = buildTimeChart(timeAnalysis);
@@ -142,15 +125,9 @@ const Analysis = () => {
         <h1 className="text-3xl font-bold font-semibold">Analysis Dashboard</h1>
         <div className="flex gap-3">
           <WeakTopicsModal />
-          <Button variant="outline" onClick={handleQuestionsClick} className="gap-2">
-            <HelpCircle className="h-4 w-4" />
-            Questions
-          </Button>
+          <QuestionsModal />
           <TimeInsightsModal revisions={revisions} />
-          <Button variant="outline" onClick={handleDetailClick} className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Details ⤵︎
-          </Button>
+          <DetailsPanel revisions={revisions} />
         </div>
       </div>
       
