@@ -205,6 +205,7 @@ const DetailView = () => {
       const accuracy = attempted > 0 ? (correct / attempted) * 100 : 0;
       
       return {
+        type: key,
         name: key,
         sessions: revs.length,
         attempted,
@@ -261,6 +262,7 @@ const DetailView = () => {
                 onClick={() => {
                   setViewMode('date-wise');
                   setSelectedItem(null);
+                  setExpandedRows(new Set());
                 }}
                 className="rounded-md"
               >
@@ -272,6 +274,7 @@ const DetailView = () => {
                 onClick={() => {
                   setViewMode('subject-wise');
                   setSelectedItem(null);
+                  setExpandedRows(new Set());
                 }}
                 className="rounded-md"
               >
@@ -283,6 +286,7 @@ const DetailView = () => {
                 onClick={() => {
                   setViewMode('type-wise');
                   setSelectedItem(null);
+                  setExpandedRows(new Set());
                 }}
                 className="rounded-md"
               >
@@ -345,18 +349,18 @@ const DetailView = () => {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={getChartData()}
-                        layout="horizontal"
+                        layout="vertical"
                         margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis 
                           type="number" 
                           domain={[0, 100]}
-                          label={{ value: 'Accuracy (%)', position: 'insideBottom', offset: -5 }}
+                          tickFormatter={(value) => `${value}%`}
                         />
                         <YAxis 
                           type="category" 
-                          dataKey="name"
+                          dataKey={viewMode === 'subject-wise' ? 'type' : 'name'}
                           width={90}
                         />
                         <Tooltip content={<CustomTooltip />} />
