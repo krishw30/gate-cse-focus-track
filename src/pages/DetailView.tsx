@@ -8,6 +8,25 @@ import { Download, Calendar, BarChart3, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RevisionData } from "@/lib/chartUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend
+} from 'chart.js';
+import { Bar as ChartJSBar } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  ChartTooltip,
+  Legend
+);
 
 type ViewMode = 'date-wise' | 'subject-wise' | 'type-wise';
 type PeriodFilter = 'last-7-days' | 'last-30-days' | 'this-month' | 'this-year' | 'all-time';
@@ -171,7 +190,7 @@ const DetailView = () => {
   };
 
   const getChartData = () => {
-    if (!selectedItem) return [];
+    if (!selectedItem) return { data: null, options: null };
     
     const filteredRevisions = getFilteredRevisions();
     const relevantRevisions = filteredRevisions.filter(rev => {
@@ -199,39 +218,158 @@ const DetailView = () => {
       groups.get(key)!.push(revision);
     });
 
-    return Array.from(groups.entries()).map(([key, revs]) => {
+    const chartData = Array.from(groups.entries()).map(([key, revs]) => {
       const attempted = revs.reduce((sum, r) => sum + r.numQuestions, 0);
       const correct = revs.reduce((sum, r) => sum + r.numCorrect, 0);
-      const accuracy = attempted > 0 ? (correct / attempted) * 100 : 0;
       
       return {
-        type: key,
         name: key,
         sessions: revs.length,
         attempted,
         correct,
         incorrect: attempted - correct,
-        accuracy: Number(accuracy.toFixed(1))
+        accuracy: attempted > 0 ? Number(((correct / attempted) * 100).toFixed(1)) : 0
       };
     }).sort((a, b) => a.name.localeCompare(b.name));
+
+    if (chartData.length === 0) {
+      return { data: null, options: null };
+    }
+
+    // Build stacked horizontal bar chart data like Analysis page
+    const labels = chartData.map(item => item.name);
+    const correctData = chartData.map(item => item.correct);
+    const incorrectData = chartData.map(item => item.incorrect);
+
+    const data = {
+      labels,
+      datasets: [
+        {
+          label: 'Correct Answers',
+          data: correctData,
+          backgroundColor: 'hsl(166, 64%, 48%)', // #20c997 - teal (matching Analysis page)
+          borderColor: 'hsl(166, 64%, 38%)',
+          borderWidth: 0,
+          borderRadius: 4,
+          borderSkipped: false,
+        },
+        {
+          label: 'Incorrect Answers',
+          data: incorrectData,
+          backgroundColor: 'hsl(9, 100%, 70%)', // #ff6b6b - coral (matching Analysis page)
+          borderColor: 'hsl(9, 100%, 60%)',
+          borderWidth: 0,
+          borderRadius: 4,
+          borderSkipped: false,
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      scales: {
+        x: {
+          stacked: true,
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0,0,0,0.05)',
+          },
+          ticks: {
+            color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
+            font: {
+              family: 'Inter, system-ui',
+              weight: 500,
+            },
+          },
+        },
+        y: {
+          stacked: true,
+          type: 'category' as const,
+          grid: {
+            color: 'rgba(0,0,0,0.05)',
+          },
+          ticks: {
+            color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
+            font: {
+              family: 'Inter, system-ui',
+              weight: 500,
+            },
+            maxTicksLimit: 10, // Prevent overlap for long labels
+          },
+        },
+      },
+      interaction: {
+        mode: 'point' as const,
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          position: 'top' as const,
+          labels: {
+            font: {
+              family: 'Inter, system-ui',
+              weight: 600,
+            },
+            color: 'hsl(222.2, 84%, 4.9%)', // foreground color
+          },
+        },
+        tooltip: {
+          backgroundColor: '#ffffff',
+          titleColor: '#212529',
+          bodyColor: '#212529',
+          borderColor: '#e9ecef',
+          borderWidth: 1,
+          cornerRadius: 12,
+          padding: 12,
+          callbacks: {
+            beforeLabel: function() {
+              return null;
+            },
+            title: function(context: any) {
+              return `📚 ${viewMode === 'subject-wise' ? 'Type' : 'Subject'}: ${context[0].label}`;
+            },
+            label: function(context: any) {
+              const itemName = context.label;
+              const itemData = chartData.find(item => item.name === itemName);
+              
+              if (!itemData) return [];
+              
+              return [
+                `📊 Sessions: ${itemData.sessions}`,
+                `📝 Attempted: ${itemData.attempted}`,
+                `✅ Correct: ${itemData.correct}`,
+                `❌ Incorrect: ${itemData.incorrect}`,
+                `📈 Accuracy: ${itemData.accuracy}%`
+              ];
+            },
+            labelColor: function(context: any) {
+              if (context.datasetIndex === 0) {
+                return {
+                  borderColor: 'hsl(166, 64%, 48%)',
+                  backgroundColor: 'hsl(166, 64%, 48%)'
+                };
+              } else {
+                return {
+                  borderColor: 'hsl(9, 100%, 70%)',
+                  backgroundColor: 'hsl(9, 100%, 70%)'
+                };
+              }
+            }
+          }
+        },
+        onHover: (event: any, elements: any) => {
+          if (event.native) {
+            event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+          }
+        }
+      },
+    };
+
+    return { data, options, chartData };
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-medium mb-2">{label}</p>
-          <p className="text-sm">Sessions: {data.sessions}</p>
-          <p className="text-sm">Attempted: {data.attempted}</p>
-          <p className="text-sm">Correct: {data.correct}</p>
-          <p className="text-sm">Incorrect: {data.incorrect}</p>
-          <p className="text-sm font-medium">Accuracy: {data.accuracy}%</p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   if (isLoading) {
     return (
@@ -247,6 +385,7 @@ const DetailView = () => {
   }
 
   const groupedData = getGroupedData();
+  const chartResult = getChartData();
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -339,45 +478,24 @@ const DetailView = () => {
                   {viewMode === 'subject-wise' ? 'Types' : 'Subjects'} in {selectedItem}
                 </h3>
                 
-                {getChartData().length === 0 ? (
+                {!chartResult.data ? (
                   <div className="text-center text-muted-foreground py-8">
                     <BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>No data available for this filter.</p>
                   </div>
                 ) : (
-                  <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={getChartData()}
-                        layout="vertical"
-                        margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          type="number" 
-                          domain={[0, 100]}
-                          tickFormatter={(value) => `${value}%`}
-                        />
-                        <YAxis 
-                          type="category" 
-                          dataKey={viewMode === 'subject-wise' ? 'type' : 'name'}
-                          width={90}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar 
-                          dataKey="accuracy" 
-                          fill="hsl(var(--chart-accent))"
-                          radius={[0, 4, 4, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
+                  <div className="h-96 w-full">
+                    <ChartJSBar
+                      data={chartResult.data}
+                      options={chartResult.options}
+                    />
                   </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Summary Table */}
-            {getChartData().length > 0 && (
+            {chartResult.chartData && chartResult.chartData.length > 0 && (
               <Card>
                 <CardContent className="p-6">
                   <h4 className="text-md font-semibold mb-4">Summary</h4>
@@ -396,13 +514,13 @@ const DetailView = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {getChartData().map((item) => (
+                        {chartResult.chartData.map((item) => (
                           <tr key={item.name} className="border-b hover:bg-muted/50">
                             <td className="py-3 font-medium">{item.name}</td>
                             <td className="text-center py-3">{item.sessions}</td>
                             <td className="text-center py-3">{item.attempted}</td>
-                            <td className="text-center py-3 text-chart-correct">{item.correct}</td>
-                            <td className="text-center py-3 text-chart-wrong">{item.incorrect}</td>
+                            <td className="text-center py-3" style={{ color: 'hsl(166, 64%, 48%)' }}>{item.correct}</td>
+                            <td className="text-center py-3" style={{ color: 'hsl(9, 100%, 70%)' }}>{item.incorrect}</td>
                             <td className="text-center py-3 font-medium text-chart-accent">{item.accuracy}%</td>
                           </tr>
                         ))}
