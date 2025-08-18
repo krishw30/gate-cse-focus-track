@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import AddRevision from "./pages/AddRevision";
 import Analysis from "./pages/Analysis";
+import DetailView from "./pages/DetailView";
 import Navigation from "./components/Navigation";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/add-revision" element={<AddRevision />} />
             <Route path="/analysis" element={<Analysis />} />
+            <Route path="/analysis/detail" element={<DetailView />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

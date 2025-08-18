@@ -8,6 +8,7 @@ export interface RevisionData {
   type: "DPP" | "PYQ" | "Mock Test" | "Other";
   remarks: string;
   timeSpentMinutes?: number;
+  weakTopics?: string;
 }
 
 export interface SubjectAnalysis {
