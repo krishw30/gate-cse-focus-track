@@ -9,8 +9,32 @@ import Analysis from "./pages/Analysis";
 import DetailView from "./pages/DetailView";
 import Navigation from "./components/Navigation";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Login />;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/add-revision" element={<AddRevision />} />
+        <Route path="/analysis" element={<Analysis />} />
+        <Route path="/analysis/detail" element={<DetailView />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -18,17 +42,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="min-h-screen bg-background">
-          <Navigation />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/add-revision" element={<AddRevision />} />
-            <Route path="/analysis" element={<Analysis />} />
-            <Route path="/analysis/detail" element={<DetailView />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
