@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,56 +19,70 @@ interface TimeData {
 
 type TimeframeType = 'daily' | 'weekly' | 'monthly';
 
+// Helper functions for time window filtering
+const getTimeWindow = (timeframe: TimeframeType) => {
+  const now = new Date();
+  const end = now;
+  const start = new Date(now);
+
+  if (timeframe === 'daily') {
+    start.setHours(0, 0, 0, 0); // today 00:00 local
+  } else if (timeframe === 'weekly') {
+    start.setDate(now.getDate() - 7);
+  } else {
+    start.setDate(now.getDate() - 30);
+  }
+  start.setMilliseconds(0);
+  return { start, end };
+};
+
+const extractTimeMinutes = (row: RevisionData): number => {
+  const v = row?.timeSpentMinutes ?? 0;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+const extractDate = (row: RevisionData): Date | null => {
+  // Only use date string since RevisionData doesn't have timestamp
+  if (typeof row?.date === "string") {
+    const d = new Date(row.date + "T00:00:00"); // local midnight
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
+};
+
 const TimeInsightsModal = ({ revisions }: TimeInsightsModalProps) => {
   const [timeframe, setTimeframe] = useState<TimeframeType>('daily');
 
-  // Filter revisions that have time data
-  const revisionsWithTime = revisions.filter(revision => 
-    revision.timeSpentMinutes && revision.timeSpentMinutes > 0
-  );
+  // Use useMemo to recompute when timeframe or revisions change
+  const timeData = useMemo((): TimeData[] => {
+    const { start, end } = getTimeWindow(timeframe);
 
-  // Process data by timeframe
-  const processTimeData = (timeframe: TimeframeType): TimeData[] => {
-    const timeMap = new Map<string, { totalTime: number; totalQuestions: number; revisions: RevisionData[] }>();
+    // Filter revisions by time window and only include those with time data
+    const filteredRevisions = revisions.filter(revision => {
+      const timeMinutes = extractTimeMinutes(revision);
+      if (timeMinutes <= 0) return false;
 
-    // Group revisions by timeframe
-    const groupedRevisions = new Map<string, RevisionData[]>();
-    
-    revisionsWithTime.forEach(revision => {
-      let key: string;
-      const date = new Date(revision.date);
-      
-      if (timeframe === 'daily') {
-        key = revision.date;
-      } else if (timeframe === 'weekly') {
-        const year = date.getFullYear();
-        const week = getWeekNumber(date);
-        key = `${year}-W${week.toString().padStart(2, '0')}`;
-      } else {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        key = `${year}-${month.toString().padStart(2, '0')}`;
-      }
+      const revisionDate = extractDate(revision);
+      if (!revisionDate) return false;
 
-      if (!groupedRevisions.has(key)) {
-        groupedRevisions.set(key, []);
-      }
-      groupedRevisions.get(key)!.push(revision);
+      return revisionDate >= start && revisionDate <= end;
     });
 
-    // Now process by subject within each timeframe and aggregate
+    // Aggregate by subject
     const subjectMap = new Map<string, { totalTime: number; totalQuestions: number }>();
 
-    groupedRevisions.forEach(periodRevisions => {
-      periodRevisions.forEach(revision => {
-        const subject = revision.subject;
-        if (!subjectMap.has(subject)) {
-          subjectMap.set(subject, { totalTime: 0, totalQuestions: 0 });
-        }
-        const current = subjectMap.get(subject)!;
-        current.totalTime += revision.timeSpentMinutes!;
-        current.totalQuestions += revision.numQuestions;
-      });
+    filteredRevisions.forEach(revision => {
+      const subject = revision.subject;
+      const timeMinutes = extractTimeMinutes(revision);
+      
+      if (!subjectMap.has(subject)) {
+        subjectMap.set(subject, { totalTime: 0, totalQuestions: 0 });
+      }
+      
+      const current = subjectMap.get(subject)!;
+      current.totalTime += timeMinutes;
+      current.totalQuestions += revision.numQuestions;
     });
 
     return Array.from(subjectMap.entries())
@@ -76,20 +90,18 @@ const TimeInsightsModal = ({ revisions }: TimeInsightsModalProps) => {
         subject,
         totalTimeMinutes: data.totalTime,
         totalQuestions: data.totalQuestions,
-        efficiency: data.totalQuestions / (data.totalTime / 60), // questions per hour
+        efficiency: data.totalTime > 0 ? data.totalQuestions / (data.totalTime / 60) : 0,
       }))
       .sort((a, b) => b.totalTimeMinutes - a.totalTimeMinutes);
-  };
-
-  const timeData = processTimeData(timeframe);
+  }, [revisions, timeframe]);
 
   const formatTime = (minutes: number): string => {
-    if (minutes >= 60) {
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = minutes % 60;
-      return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
-    }
-    return `${minutes} mins`;
+    const m = Math.max(0, Math.round(minutes));
+    const h = Math.floor(m / 60);
+    const r = m % 60;
+    if (h > 0 && r > 0) return `${h}h ${r}m`;
+    if (h > 0) return `${h}h`;
+    return `${r}m`;
   };
 
   const getTotalStats = () => {
@@ -155,8 +167,8 @@ const TimeInsightsModal = ({ revisions }: TimeInsightsModalProps) => {
                   <Card>
                     <CardContent className="py-8 text-center text-muted-foreground">
                       <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p>No time data recorded yet</p>
-                      <p className="text-xs mt-1">Add revisions with time tracking to see insights</p>
+                      <p>No sessions in this period</p>
+                      <p className="text-xs mt-1">No time data available for the {timeframe} timeframe</p>
                     </CardContent>
                   </Card>
                 ) : (
