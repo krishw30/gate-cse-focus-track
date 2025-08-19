@@ -105,6 +105,7 @@ const Analysis = () => {
   const subjectAnalysis = processSubjectAnalysis(revisions);
   const subjectChart = buildSubjectChart(subjectAnalysis);
   
+  // Recalculate progress data whenever timeframe changes
   const progressData = processProgressData(revisions, timeframe);
   const progressChart = buildProgressChart(progressData);
 
