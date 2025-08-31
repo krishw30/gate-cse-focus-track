@@ -125,13 +125,6 @@ const Analysis = () => {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold font-semibold">Analysis Dashboard</h1>
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => window.location.href = '/flmt-analysis'}
-            className="font-medium"
-          >
-            View Full Length Mock Test Analysis
-          </Button>
           <WeakTopicsModal />
           <QuestionsModal />
           <TimeInsightsModal revisions={revisions} />

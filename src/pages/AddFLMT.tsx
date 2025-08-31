@@ -142,208 +142,246 @@ const AddFLMT = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center font-semibold">Add Full Length Mock Test</h1>
-      
-      <Card className="shadow-lg border-0 rounded-xl" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-        <CardHeader className="text-center pb-6">
-          <CardTitle className="text-xl font-semibold text-foreground">FLMT Details</CardTitle>
-          <CardDescription>
-            Track your Full Length Mock Test performance and insights
-          </CardDescription>
-        </CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Add Full Length Mock Test
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            Record your mock test performance and track your progress
+          </p>
+        </div>
         
-        <CardContent className="space-y-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
-              {/* Date and Test Name */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date > new Date()}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <Card className="shadow-xl border-0 bg-card/50 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl font-semibold text-center">FLMT Performance Record</CardTitle>
+            <CardDescription className="text-center text-base">
+              Enter your Full Length Mock Test details to analyze your performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">{/* Basic Information */}
+              <div className="bg-muted/30 p-6 rounded-xl border border-muted">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Test Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Test Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal h-11 bg-background",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Select test date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="testName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Test Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. GATE 2025 Mock Test 1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="testName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Test Name</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., GATE 2025 Mock Test 1" 
+                            className="h-11 bg-background"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
               {/* Performance Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="correct"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Correct Answers</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          max="65" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="bg-muted/30 p-6 rounded-xl border border-muted">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Performance Metrics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="correct"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Correct Answers</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            max="65" 
+                            placeholder="0"
+                            className="h-11 bg-background"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="incorrect"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Incorrect Answers</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          max="65" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="incorrect"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Incorrect Answers</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            max="65" 
+                            placeholder="0"
+                            className="h-11 bg-background"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="marks"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Total Marks</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="marks"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Total Marks</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="0" 
+                            step="0.1" 
+                            placeholder="0"
+                            className="h-11 bg-background"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
 
-              {/* Time Spent */}
-              <FormField
-                control={form.control}
-                name="timeSpent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Time Spent (minutes)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1" 
-                        placeholder="e.g. 180 (3 hours)"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Time and Auto-calculated Stats */}
+              <div className="bg-muted/30 p-6 rounded-xl border border-muted">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Time & Statistics</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="timeSpent"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Time Spent (minutes)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            max="300" 
+                            placeholder="180"
+                            className="h-11 bg-background"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              {/* Auto-calculated Display */}
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <h3 className="font-medium text-sm text-muted-foreground mb-2">Auto-calculated Values</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="flex justify-between">
-                    <span>Unattempted:</span>
-                    <span className="font-medium">{unattempted}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Accuracy:</span>
-                    <span className="font-medium">{accuracy}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Marks/Minute:</span>
-                    <span className="font-medium">{marksPerMinute}</span>
+                  {/* Auto-calculated Stats */}
+                  <div className="space-y-4">
+                    <div className="p-6 bg-primary/5 rounded-lg border border-primary/10">
+                      <h4 className="text-base font-semibold text-foreground mb-4">Auto-calculated Statistics</h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-primary">{unattempted}</div>
+                          <div className="text-sm text-muted-foreground mt-1">Unattempted</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-primary">{accuracy}%</div>
+                          <div className="text-sm text-muted-foreground mt-1">Accuracy</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-primary">{marksPerMinute}</div>
+                          <div className="text-sm text-muted-foreground mt-1">Marks/Min</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Weak Subjects */}
-              <div className="space-y-3">
-                <FormLabel>Weak Subjects</FormLabel>
-                <div className="flex gap-2">
+              <div className="bg-muted/30 p-6 rounded-xl border border-muted">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Weak Subjects</h3>
+                <div className="flex gap-2 mb-4">
                   <Input
-                    placeholder="Add weak subject"
                     value={newWeakSubject}
                     onChange={(e) => setNewWeakSubject(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addWeakSubject())}
+                    placeholder="Enter a subject you found challenging"
+                    className="h-11 bg-background"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addWeakSubject();
+                      }
+                    }}
                   />
-                  <Button type="button" variant="outline" size="sm" onClick={addWeakSubject}>
-                    <Plus className="w-4 h-4" />
+                  <Button type="button" onClick={addWeakSubject} className="px-6">
+                    Add
                   </Button>
                 </div>
                 {weakSubjects.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {weakSubjects.map((subject, index) => (
-                      <div key={index} className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-sm">
+                      <div key={index} className="flex items-center gap-2 bg-background px-3 py-2 rounded-lg border text-sm">
                         {subject}
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-auto p-0 w-4 h-4"
+                          className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
                           onClick={() => removeWeakSubject(index)}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          ×
                         </Button>
                       </div>
                     ))}
@@ -352,32 +390,38 @@ const AddFLMT = () => {
               </div>
 
               {/* Important Questions */}
-              <div className="space-y-3">
-                <FormLabel>Important Questions</FormLabel>
-                <div className="flex gap-2">
+              <div className="bg-muted/30 p-6 rounded-xl border border-muted">
+                <h3 className="text-lg font-semibold mb-4 text-foreground">Important Questions</h3>
+                <div className="flex gap-2 mb-4">
                   <Input
-                    placeholder="Add important question"
                     value={newImportantQuestion}
                     onChange={(e) => setNewImportantQuestion(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImportantQuestion())}
+                    placeholder="Add a question worth reviewing"
+                    className="h-11 bg-background"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addImportantQuestion();
+                      }
+                    }}
                   />
-                  <Button type="button" variant="outline" size="sm" onClick={addImportantQuestion}>
-                    <Plus className="w-4 h-4" />
+                  <Button type="button" onClick={addImportantQuestion} className="px-6">
+                    Add
                   </Button>
                 </div>
                 {importantQuestions.length > 0 && (
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                  <div className="space-y-3 max-h-40 overflow-y-auto">
                     {importantQuestions.map((question, index) => (
-                      <div key={index} className="flex items-start gap-2 bg-muted/50 p-2 rounded-md text-sm">
-                        <span className="flex-1">{question}</span>
+                      <div key={index} className="flex items-start justify-between gap-3 p-3 bg-background rounded-lg border">
+                        <span className="text-sm flex-1 leading-relaxed">{question}</span>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-auto p-0 w-4 h-4 mt-0.5"
+                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0"
                           onClick={() => removeImportantQuestion(index)}
                         >
-                          <Trash2 className="w-3 h-3" />
+                          ×
                         </Button>
                       </div>
                     ))}
@@ -386,35 +430,48 @@ const AddFLMT = () => {
               </div>
 
               {/* Remarks */}
-              <FormField
-                control={form.control}
-                name="remarks"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Remarks (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Any additional notes about this test..."
-                        className="min-h-[80px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="bg-muted/30 p-6 rounded-xl border border-muted">
+                <FormField
+                  control={form.control}
+                  name="remarks"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg font-semibold text-foreground">Additional Notes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Share your thoughts, observations, or areas for improvement from this test..."
+                          className="min-h-[120px] bg-background border-muted text-sm leading-relaxed"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <Button 
-                type="submit" 
-                className="w-full font-medium" 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Adding..." : "Add FLMT Record"}
-              </Button>
+              <div className="pt-4">
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-base font-medium" 
+                  size="lg"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Submitting Test Data...
+                    </div>
+                  ) : (
+                    "Submit FLMT Performance"
+                  )}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };

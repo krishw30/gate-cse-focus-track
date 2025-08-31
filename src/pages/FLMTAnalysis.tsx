@@ -233,87 +233,87 @@ const FLMTAnalysis = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => window.history.back()}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
-        <h1 className="text-3xl font-bold font-semibold">Full Length Mock Test Analysis</h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Full Length Mock Test Analysis
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            Track your mock test performance and identify improvement areas
+          </p>
+        </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader className="pb-2">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Tests</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-chart-accent">{totalTests}</div>
+            <div className="text-3xl font-bold text-primary">{totalTests}</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader className="pb-2">
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Average Marks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-chart-accent">{averageMarks.toFixed(1)}</div>
+            <div className="text-3xl font-bold text-primary">{averageMarks.toFixed(1)}</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader className="pb-2">
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Best Marks</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-chart-accent">{bestMarks}</div>
+            <div className="text-3xl font-bold text-primary">{bestMarks}</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader className="pb-2">
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Average Accuracy</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-chart-accent">{averageAccuracy.toFixed(1)}%</div>
+            <div className="text-3xl font-bold text-primary">{averageAccuracy.toFixed(1)}%</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader className="pb-2">
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Avg Time/Test</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-chart-accent">{averageTimeSpent.toFixed(0)}m</div>
+            <div className="text-3xl font-bold text-primary">{averageTimeSpent.toFixed(0)}m</div>
           </CardContent>
         </Card>
         
-        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
-          <CardHeader className="pb-2">
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Avg Marks/Min</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-chart-accent">{averageMarksPerMinute.toFixed(2)}</div>
+            <div className="text-3xl font-bold text-primary">{averageMarksPerMinute.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Performance Chart */}
-      <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 mb-8">
-        <CardHeader>
-          <CardTitle className="font-semibold text-foreground">Performance Over Time</CardTitle>
-          <CardDescription>
-            Track your progress across Full Length Mock Tests
+      <Card className="shadow-xl border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300 mb-8">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-semibold">Performance Over Time</CardTitle>
+          <CardDescription className="text-base">
+            Track your performance trends across different metrics
           </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 flex gap-2 flex-wrap">
+          <div className="flex gap-3 pt-2">
             <Button
               variant={yAxisType === 'marks' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setYAxisType('marks')}
-              className="font-medium transition-all duration-200"
+              className="font-medium"
             >
               Marks
             </Button>
@@ -321,7 +321,7 @@ const FLMTAnalysis = () => {
               variant={yAxisType === 'timeSpent' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setYAxisType('timeSpent')}
-              className="font-medium transition-all duration-200"
+              className="font-medium"
             >
               Time Spent
             </Button>
@@ -329,12 +329,13 @@ const FLMTAnalysis = () => {
               variant={yAxisType === 'marksPerMinute' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setYAxisType('marksPerMinute')}
-              className="font-medium transition-all duration-200"
+              className="font-medium"
             >
               Marks/Minute
             </Button>
           </div>
-          
+        </CardHeader>
+        <CardContent className="pt-2">
           <div className="h-[400px]">
             <Line data={getChartData()} options={chartOptions} />
           </div>
@@ -342,14 +343,14 @@ const FLMTAnalysis = () => {
       </Card>
 
       {/* FLMT Records Table */}
-      <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="font-semibold text-foreground">Full Length Mock Test Records</CardTitle>
-          <CardDescription>
-            Detailed breakdown of all your mock test attempts
+      <Card className="shadow-xl border-0 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-semibold">Test Records</CardTitle>
+          <CardDescription className="text-base">
+            Detailed breakdown of each Full Length Mock Test performance
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-2">
           <div className="space-y-2">
             {flmtData.map((test) => (
               <div key={test.id} className="border rounded-lg">
@@ -493,6 +494,7 @@ const FLMTAnalysis = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
