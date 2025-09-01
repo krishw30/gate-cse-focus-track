@@ -50,8 +50,6 @@ type FormData = z.infer<typeof formSchema>;
 const AddFLMT = () => {
   const [weakSubjects, setWeakSubjects] = useState<string[]>([]);
   const [newWeakSubject, setNewWeakSubject] = useState("");
-  const [importantQuestions, setImportantQuestions] = useState<string[]>([]);
-  const [newImportantQuestion, setNewImportantQuestion] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -86,16 +84,6 @@ const AddFLMT = () => {
     setWeakSubjects(weakSubjects.filter((_, i) => i !== index));
   };
 
-  const addImportantQuestion = () => {
-    if (newImportantQuestion.trim()) {
-      setImportantQuestions([...importantQuestions, newImportantQuestion.trim()]);
-      setNewImportantQuestion("");
-    }
-  };
-
-  const removeImportantQuestion = (index: number) => {
-    setImportantQuestions(importantQuestions.filter((_, i) => i !== index));
-  };
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -110,7 +98,6 @@ const AddFLMT = () => {
         timeSpent: data.timeSpent,
         weakSubjects,
         remarks: data.remarks,
-        importantQuestions,
         timestamp: new Date(),
         // Auto-calculated fields are calculated on the frontend during display
       };
@@ -125,9 +112,7 @@ const AddFLMT = () => {
       // Reset form
       form.reset();
       setWeakSubjects([]);
-      setImportantQuestions([]);
       setNewWeakSubject("");
-      setNewImportantQuestion("");
       
     } catch (error) {
       console.error("Error adding FLMT:", error);
@@ -389,45 +374,6 @@ const AddFLMT = () => {
                 )}
               </div>
 
-              {/* Important Questions */}
-              <div className="bg-muted/30 p-6 rounded-xl border border-muted">
-                <h3 className="text-lg font-semibold mb-4 text-foreground">Important Questions</h3>
-                <div className="flex gap-2 mb-4">
-                  <Input
-                    value={newImportantQuestion}
-                    onChange={(e) => setNewImportantQuestion(e.target.value)}
-                    placeholder="Add a question worth reviewing"
-                    className="h-11 bg-background"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addImportantQuestion();
-                      }
-                    }}
-                  />
-                  <Button type="button" onClick={addImportantQuestion} className="px-6">
-                    Add
-                  </Button>
-                </div>
-                {importantQuestions.length > 0 && (
-                  <div className="space-y-3 max-h-40 overflow-y-auto">
-                    {importantQuestions.map((question, index) => (
-                      <div key={index} className="flex items-start justify-between gap-3 p-3 bg-background rounded-lg border">
-                        <span className="text-sm flex-1 leading-relaxed">{question}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0"
-                          onClick={() => removeImportantQuestion(index)}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* Remarks */}
               <div className="bg-muted/30 p-6 rounded-xl border border-muted">

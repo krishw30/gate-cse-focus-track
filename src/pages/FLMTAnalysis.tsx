@@ -38,7 +38,6 @@ interface FLMTData {
   timeSpent: number; // minutes
   weakSubjects: string[];
   remarks?: string;
-  importantQuestions?: string[];
   // Auto-calculated fields
   unattempted: number;
   accuracy: number;
@@ -344,152 +343,141 @@ const FLMTAnalysis = () => {
 
       {/* FLMT Records Table */}
       <Card className="shadow-xl border-0 bg-card/50 backdrop-blur-sm">
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-6">
           <CardTitle className="text-2xl font-semibold">Test Records</CardTitle>
           <CardDescription className="text-base">
             Detailed breakdown of each Full Length Mock Test performance
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-2">
-          <div className="space-y-2">
+          <div className="space-y-6">
             {flmtData.map((test) => (
-              <div key={test.id} className="border rounded-lg">
-                <div className="flex items-center justify-between p-4 hover:bg-muted/50">
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 flex-1">
+              <Card key={test.id} className="shadow-lg border border-muted/20 bg-background/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
                     <div>
-                      <div className="text-sm text-muted-foreground">Date</div>
-                      <div className="font-medium">{test.date}</div>
+                      <h3 className="text-lg font-semibold text-foreground">{test.testName}</h3>
+                      <p className="text-muted-foreground text-sm">{test.date}</p>
                     </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Test Name</div>
-                      <div className="font-medium">{test.testName}</div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setExpandedRow(expandedRow === test.id ? null : test.id)}
+                      className="shrink-0"
+                    >
+                      {expandedRow === test.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      View Details
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.marks}</div>
+                      <div className="text-sm text-muted-foreground">Total Marks</div>
                     </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Marks</div>
-                      <div className="font-medium">{test.marks}</div>
-                    </div>
-                    <div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.accuracy.toFixed(1)}%</div>
                       <div className="text-sm text-muted-foreground">Accuracy</div>
-                      <div className="font-medium">{test.accuracy.toFixed(1)}%</div>
                     </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Time</div>
-                      <div className="font-medium">{test.timeSpent}m</div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.timeSpent}m</div>
+                      <div className="text-sm text-muted-foreground">Time Spent</div>
                     </div>
-                    <div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.marksPerMinute.toFixed(2)}</div>
                       <div className="text-sm text-muted-foreground">Marks/Min</div>
-                      <div className="font-medium">{test.marksPerMinute.toFixed(2)}</div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpandedRow(expandedRow === test.id ? null : test.id)}
-                  >
-                    {expandedRow === test.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    View Details
-                  </Button>
-                </div>
-                
-                {expandedRow === test.id && (
-                  <div className="border-t bg-muted/20 p-4 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Test Details</h4>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span>Test Name:</span>
-                              <span className="font-medium">{test.testName}</span>
+                  
+                  {expandedRow === test.id && (
+                    <div className="border-t pt-6 space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Performance Section */}
+                        <Card className="shadow-sm border border-muted/20 bg-muted/10">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="text-lg font-semibold">Performance Breakdown</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800/30">
+                              <span className="font-medium text-foreground">Correct Answers</span>
+                              <span className="text-xl font-bold text-green-600 dark:text-green-400">{test.correct}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Date:</span>
-                              <span className="font-medium">{test.date}</span>
+                            <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800/30">
+                              <span className="font-medium text-foreground">Incorrect Answers</span>
+                              <span className="text-xl font-bold text-red-600 dark:text-red-400">{test.incorrect}</span>
                             </div>
-                          </div>
-                        </div>
+                            <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-950/30 rounded-lg border border-gray-200 dark:border-gray-800/30">
+                              <span className="font-medium text-foreground">Unattempted</span>
+                              <span className="text-xl font-bold text-gray-600 dark:text-gray-400">{test.unattempted}</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
+                              <span className="font-medium text-foreground">Total Marks</span>
+                              <span className="text-xl font-bold text-primary">{test.marks}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
                         
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Performance</h4>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span>Correct:</span>
-                              <span className="font-medium text-green-600">{test.correct}</span>
+                        {/* Time Analysis Section */}
+                        <Card className="shadow-sm border border-muted/20 bg-muted/10">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="text-lg font-semibold">Time Analysis</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800/30">
+                              <span className="font-medium text-foreground">Time Spent</span>
+                              <span className="text-xl font-bold text-blue-600 dark:text-blue-400">{test.timeSpent} min</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Incorrect:</span>
-                              <span className="font-medium text-red-600">{test.incorrect}</span>
+                            <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800/30">
+                              <span className="font-medium text-foreground">Marks per Minute</span>
+                              <span className="text-xl font-bold text-purple-600 dark:text-purple-400">{test.marksPerMinute.toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Unattempted:</span>
-                              <span className="font-medium text-orange-600">{test.unattempted}</span>
+                            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
+                              <span className="font-medium text-foreground">Overall Accuracy</span>
+                              <span className="text-xl font-bold text-primary">{test.accuracy.toFixed(1)}%</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span>Marks:</span>
-                              <span className="font-medium">{test.marks}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Accuracy:</span>
-                              <span className="font-medium">{test.accuracy.toFixed(1)}%</span>
-                            </div>
-                          </div>
-                        </div>
+                          </CardContent>
+                        </Card>
                       </div>
                       
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Time Analysis</h4>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span>Time Spent:</span>
-                              <span className="font-medium">{test.timeSpent} minutes</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Marks per Minute:</span>
-                              <span className="font-medium">{test.marksPerMinute.toFixed(2)}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <h4 className="font-medium text-sm text-muted-foreground mb-2">Weak Subjects</h4>
-                          <div className="flex flex-wrap gap-1">
+                      {/* Weak Subjects Section */}
+                      <Card className="shadow-sm border border-muted/20 bg-muted/10">
+                        <CardHeader className="pb-4">
+                          <CardTitle className="text-lg font-semibold">Weak Subjects</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
                             {test.weakSubjects && test.weakSubjects.length > 0 ? (
                               test.weakSubjects.map((subject, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
+                                <Badge key={index} variant="secondary" className="px-3 py-1 text-sm font-medium bg-orange-100 dark:bg-orange-950/30 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800/30">
                                   {subject}
                                 </Badge>
                               ))
                             ) : (
-                              <span className="text-muted-foreground text-sm">No weak subjects noted</span>
+                              <div className="text-muted-foreground text-sm bg-muted/30 px-4 py-2 rounded-lg">
+                                No weak subjects identified
+                              </div>
                             )}
                           </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Remarks Section */}
+                      {test.remarks && (
+                        <Card className="shadow-sm border border-muted/20 bg-muted/10">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="text-lg font-semibold">Additional Notes</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="bg-background/80 p-4 rounded-lg border border-muted/20">
+                              <p className="text-foreground leading-relaxed">{test.remarks}</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
-                    
-                    {test.remarks && (
-                      <div>
-                        <h4 className="font-medium text-sm text-muted-foreground mb-2">Remarks</h4>
-                        <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">{test.remarks}</p>
-                      </div>
-                    )}
-                    
-                    {test.importantQuestions && test.importantQuestions.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-sm text-muted-foreground mb-2">Important Questions</h4>
-                        <div className="max-h-32 overflow-y-auto bg-muted/50 p-3 rounded-lg">
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            {test.importantQuestions.map((question, index) => (
-                              <li key={index} className="text-muted-foreground">{question}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </Card>
             ))}
           </div>
         </CardContent>
