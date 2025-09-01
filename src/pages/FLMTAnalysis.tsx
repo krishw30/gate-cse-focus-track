@@ -134,26 +134,23 @@ const FLMTAnalysis = () => {
   // Prepare chart data
   const chartLabels = flmtData.slice().reverse().map(test => test.date);
   const getChartData = () => {
-    let yAxisData, yAxisLabel, yAxisColor, gradientColor;
+    let yAxisData, yAxisLabel, yAxisColor;
     
     switch (yAxisType) {
       case 'timeSpent':
         yAxisData = flmtData.slice().reverse().map(test => test.timeSpent);
         yAxisLabel = 'Time Spent (minutes)';
-        yAxisColor = 'hsl(var(--chart-coral))';
-        gradientColor = 'hsla(var(--chart-coral), 0.1)';
+        yAxisColor = 'hsl(var(--chart-2))';
         break;
       case 'marksPerMinute':
         yAxisData = flmtData.slice().reverse().map(test => test.marksPerMinute.toFixed(2));
         yAxisLabel = 'Marks per Minute';
-        yAxisColor = 'hsl(var(--chart-purple))';
-        gradientColor = 'hsla(var(--chart-purple), 0.1)';
+        yAxisColor = 'hsl(var(--chart-3))';
         break;
       default:
         yAxisData = flmtData.slice().reverse().map(test => test.marks);
         yAxisLabel = 'Marks';
-        yAxisColor = 'hsl(var(--chart-accent))';
-        gradientColor = 'hsla(var(--chart-accent), 0.1)';
+        yAxisColor = 'hsl(var(--chart-1))';
     }
 
     return {
@@ -163,27 +160,11 @@ const FLMTAnalysis = () => {
           label: yAxisLabel,
           data: yAxisData,
           borderColor: yAxisColor,
-          backgroundColor: (context: any) => {
-            const chart = context.chart;
-            const {ctx, chartArea} = chart;
-            if (!chartArea) return gradientColor;
-            
-            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-            gradient.addColorStop(0, yAxisColor.replace('hsl', 'hsla').replace(')', ', 0.3)'));
-            gradient.addColorStop(1, yAxisColor.replace('hsl', 'hsla').replace(')', ', 0.05)'));
-            return gradient;
-          },
-          borderWidth: 4,
-          pointRadius: 8,
-          pointHoverRadius: 12,
-          pointBackgroundColor: yAxisColor,
-          pointBorderColor: '#ffffff',
-          pointBorderWidth: 3,
-          pointHoverBackgroundColor: yAxisColor,
-          pointHoverBorderColor: '#ffffff',
-          pointHoverBorderWidth: 4,
-          tension: 0.4,
-          fill: true,
+          backgroundColor: yAxisColor + '20',
+          borderWidth: 3,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          tension: 0.1,
         }
       ]
     };
@@ -192,42 +173,17 @@ const FLMTAnalysis = () => {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: {
-      intersect: false,
-      mode: 'index' as const,
-    },
     plugins: {
       legend: {
         position: 'top' as const,
         labels: {
-          font: { 
-            size: 14, 
-            weight: 600,
-            family: 'Inter'
-          },
-          padding: 24,
-          usePointStyle: true,
-          pointStyleWidth: 18
+          font: { size: 12 },
+          padding: 20
         }
       },
       tooltip: {
-        backgroundColor: 'hsl(var(--popover))',
-        titleColor: 'hsl(var(--popover-foreground))',
-        bodyColor: 'hsl(var(--popover-foreground))',
-        borderColor: 'hsl(var(--border))',
-        borderWidth: 1,
-        cornerRadius: 12,
-        padding: 16,
-        titleFont: {
-          size: 16,
-          weight: 600,
-          family: 'Inter'
-        },
-        bodyFont: {
-          size: 14,
-          family: 'Inter'
-        },
-        displayColors: false,
+        mode: 'index' as const,
+        intersect: false,
         callbacks: {
           title: (context: any) => {
             const index = context[0].dataIndex;
@@ -237,18 +193,18 @@ const FLMTAnalysis = () => {
           afterTitle: (context: any) => {
             const index = context[0].dataIndex;
             const test = flmtData.slice().reverse()[index];
-            return `📅 ${test.date}`;
+            return `Date: ${test.date}`;
           },
           label: (context: any) => {
             const index = context.dataIndex;
             const test = flmtData.slice().reverse()[index];
             return [
-              `📊 Marks: ${test.marks}`,
-              `✅ Correct: ${test.correct}`,
-              `❌ Incorrect: ${test.incorrect}`,
-              `🎯 Accuracy: ${test.accuracy.toFixed(1)}%`,
-              `⏱️ Time: ${test.timeSpent} minutes`,
-              `⚡ Efficiency: ${test.marksPerMinute.toFixed(2)} marks/min`
+              `Marks: ${test.marks}`,
+              `Correct: ${test.correct}`,
+              `Incorrect: ${test.incorrect}`,
+              `Accuracy: ${test.accuracy.toFixed(1)}%`,
+              `Time Spent: ${test.timeSpent} minutes`,
+              `Marks per Minute: ${test.marksPerMinute.toFixed(2)}`
             ];
           }
         }
@@ -258,277 +214,178 @@ const FLMTAnalysis = () => {
       y: {
         beginAtZero: true,
         grid: {
-          color: 'hsl(var(--border))',
-          lineWidth: 1,
-          drawBorder: false
-        },
-        border: {
-          display: false
+          color: 'hsl(var(--border))'
         },
         ticks: {
-          font: { 
-            size: 12,
-            weight: 500,
-            family: 'Inter'
-          },
-          color: 'hsl(var(--muted-foreground))',
-          padding: 12
+          font: { size: 11 }
         }
       },
       x: {
         grid: {
-          color: 'hsl(var(--border))',
-          lineWidth: 1,
-          drawBorder: false
-        },
-        border: {
-          display: false
+          color: 'hsl(var(--border))'
         },
         ticks: {
-          font: { 
-            size: 12,
-            weight: 500,
-            family: 'Inter'
-          },
-          color: 'hsl(var(--muted-foreground))',
-          padding: 12,
-          maxRotation: 45
+          font: { size: 11 }
         }
       }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-chart-accent/5 pointer-events-none" />
-      <div className="relative max-w-7xl mx-auto p-6">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-chart-accent rounded-full mb-6 shadow-lg">
-            <span className="text-3xl">📊</span>
-          </div>
-          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-chart-accent to-primary bg-clip-text text-transparent">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             Full Length Mock Test Analysis
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Track your mock test performance with beautiful insights and identify areas for improvement
+          <p className="text-xl text-muted-foreground">
+            Track your mock test performance and identify improvement areas
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-card via-card to-primary/5 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <CardHeader className="pb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-chart-accent rounded-lg flex items-center justify-center">
-                <span className="text-lg">📝</span>
-              </div>
-              <CardTitle className="text-sm font-semibold text-muted-foreground">Total Tests</CardTitle>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Tests</CardTitle>
           </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-r from-primary to-chart-accent bg-clip-text text-transparent">{totalTests}</div>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary">{totalTests}</div>
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-card via-card to-chart-teal/5 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-teal/10 via-transparent to-chart-teal/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <CardHeader className="pb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-chart-teal to-chart-green rounded-lg flex items-center justify-center">
-                <span className="text-lg">📊</span>
-              </div>
-              <CardTitle className="text-sm font-semibold text-muted-foreground">Average Marks</CardTitle>
-            </div>
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Average Marks</CardTitle>
           </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-r from-chart-teal to-chart-green bg-clip-text text-transparent">{averageMarks.toFixed(1)}</div>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary">{averageMarks.toFixed(1)}</div>
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-card via-card to-chart-orange/5 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-orange/10 via-transparent to-chart-orange/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <CardHeader className="pb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-chart-orange to-chart-coral rounded-lg flex items-center justify-center">
-                <span className="text-lg">🏆</span>
-              </div>
-              <CardTitle className="text-sm font-semibold text-muted-foreground">Best Marks</CardTitle>
-            </div>
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Best Marks</CardTitle>
           </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-r from-chart-orange to-chart-coral bg-clip-text text-transparent">{bestMarks}</div>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary">{bestMarks}</div>
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-card via-card to-chart-purple/5 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-purple/10 via-transparent to-chart-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <CardHeader className="pb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-chart-purple to-primary rounded-lg flex items-center justify-center">
-                <span className="text-lg">🎯</span>
-              </div>
-              <CardTitle className="text-sm font-semibold text-muted-foreground">Average Accuracy</CardTitle>
-            </div>
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Average Accuracy</CardTitle>
           </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-r from-chart-purple to-primary bg-clip-text text-transparent">{averageAccuracy.toFixed(1)}%</div>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary">{averageAccuracy.toFixed(1)}%</div>
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-card via-card to-chart-blue/5 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-blue/10 via-transparent to-chart-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <CardHeader className="pb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-chart-blue to-chart-accent rounded-lg flex items-center justify-center">
-                <span className="text-lg">⏱️</span>
-              </div>
-              <CardTitle className="text-sm font-semibold text-muted-foreground">Avg Time/Test</CardTitle>
-            </div>
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Time/Test</CardTitle>
           </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-r from-chart-blue to-chart-accent bg-clip-text text-transparent">{averageTimeSpent.toFixed(0)}m</div>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary">{averageTimeSpent.toFixed(0)}m</div>
           </CardContent>
         </Card>
         
-        <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-card via-card to-chart-coral/5 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105">
-          <div className="absolute inset-0 bg-gradient-to-br from-chart-coral/10 via-transparent to-chart-coral/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <CardHeader className="pb-4 relative z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-chart-coral to-chart-orange rounded-lg flex items-center justify-center">
-                <span className="text-lg">⚡</span>
-              </div>
-              <CardTitle className="text-sm font-semibold text-muted-foreground">Avg Marks/Min</CardTitle>
-            </div>
+        <Card className="shadow-lg border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Marks/Min</CardTitle>
           </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="text-4xl font-bold bg-gradient-to-r from-chart-coral to-chart-orange bg-clip-text text-transparent">{averageMarksPerMinute.toFixed(2)}</div>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary">{averageMarksPerMinute.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Performance Chart */}
-      <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-card via-card/80 to-primary/5 shadow-2xl hover:shadow-3xl transition-all duration-500 mb-12">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        <CardHeader className="pb-6 relative z-10">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-chart-accent rounded-xl flex items-center justify-center">
-              <span className="text-2xl">📈</span>
-            </div>
-            <div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Performance Over Time
-              </CardTitle>
-              <CardDescription className="text-lg mt-2 text-muted-foreground">
-                Visualize your performance trends with interactive insights
-              </CardDescription>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 pt-4">
+      <Card className="shadow-xl border-0 bg-card/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300 mb-8">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-semibold">Performance Over Time</CardTitle>
+          <CardDescription className="text-base">
+            Track your performance trends across different metrics
+          </CardDescription>
+          <div className="flex gap-3 pt-2">
             <Button
               variant={yAxisType === 'marks' ? 'default' : 'outline'}
-              size="lg"
+              size="sm"
               onClick={() => setYAxisType('marks')}
-              className="font-semibold text-base px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="font-medium"
             >
-              📊 Marks
+              Marks
             </Button>
             <Button
               variant={yAxisType === 'timeSpent' ? 'default' : 'outline'}
-              size="lg"
+              size="sm"
               onClick={() => setYAxisType('timeSpent')}
-              className="font-semibold text-base px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="font-medium"
             >
-              ⏱️ Time Spent
+              Time Spent
             </Button>
             <Button
               variant={yAxisType === 'marksPerMinute' ? 'default' : 'outline'}
-              size="lg"
+              size="sm"
               onClick={() => setYAxisType('marksPerMinute')}
-              className="font-semibold text-base px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              className="font-medium"
             >
-              ⚡ Efficiency
+              Marks/Minute
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="pt-2 relative z-10">
-          <div className="h-[450px] p-4 bg-gradient-to-br from-background/50 to-muted/20 rounded-xl backdrop-blur-sm">
+        <CardContent className="pt-2">
+          <div className="h-[400px]">
             <Line data={getChartData()} options={chartOptions} />
           </div>
         </CardContent>
       </Card>
 
       {/* FLMT Records Table */}
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card via-card/90 to-muted/10 shadow-2xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-accent/5 pointer-events-none" />
-        <CardHeader className="pb-8 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-chart-teal to-chart-green rounded-xl flex items-center justify-center">
-              <span className="text-2xl">📋</span>
-            </div>
-            <div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Test Records
-              </CardTitle>
-              <CardDescription className="text-lg mt-2 text-muted-foreground">
-                Detailed breakdown of each Full Length Mock Test performance
-              </CardDescription>
-            </div>
-          </div>
+      <Card className="shadow-xl border-0 bg-card/50 backdrop-blur-sm">
+        <CardHeader className="pb-6">
+          <CardTitle className="text-2xl font-semibold">Test Records</CardTitle>
+          <CardDescription className="text-base">
+            Detailed breakdown of each Full Length Mock Test performance
+          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-2 relative z-10">
-          <div className="space-y-8">
-            {flmtData.map((test, index) => (
-              <Card key={test.id} className="group relative overflow-hidden border-0 bg-gradient-to-br from-background via-background/95 to-primary/5 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-chart-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="p-8 relative z-10">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-primary to-chart-accent rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-foreground">{test.testName}</h3>
-                        <p className="text-muted-foreground flex items-center gap-2 mt-1">
-                          <span>📅</span> {test.date}
-                        </p>
-                      </div>
+        <CardContent className="pt-2">
+          <div className="space-y-6">
+            {flmtData.map((test) => (
+              <Card key={test.id} className="shadow-lg border border-muted/20 bg-background/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground">{test.testName}</h3>
+                      <p className="text-muted-foreground text-sm">{test.date}</p>
                     </div>
                     <Button
-                      variant="outline"
-                      size="lg"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => setExpandedRow(expandedRow === test.id ? null : test.id)}
-                      className="shrink-0 rounded-xl px-6 py-3 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="shrink-0"
                     >
-                      {expandedRow === test.id ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
-                      {expandedRow === test.id ? 'Hide Details' : 'View Details'}
+                      {expandedRow === test.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      View Details
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-                    <div className="text-center p-6 bg-gradient-to-br from-primary/10 to-chart-accent/10 rounded-xl border border-primary/20 shadow-lg">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-primary to-chart-accent bg-clip-text text-transparent">{test.marks}</div>
-                      <div className="text-sm font-semibold text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                        <span>📊</span> Total Marks
-                      </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.marks}</div>
+                      <div className="text-sm text-muted-foreground">Total Marks</div>
                     </div>
-                    <div className="text-center p-6 bg-gradient-to-br from-chart-teal/10 to-chart-green/10 rounded-xl border border-chart-teal/20 shadow-lg">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-chart-teal to-chart-green bg-clip-text text-transparent">{test.accuracy.toFixed(1)}%</div>
-                      <div className="text-sm font-semibold text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                        <span>🎯</span> Accuracy
-                      </div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.accuracy.toFixed(1)}%</div>
+                      <div className="text-sm text-muted-foreground">Accuracy</div>
                     </div>
-                    <div className="text-center p-6 bg-gradient-to-br from-chart-blue/10 to-chart-purple/10 rounded-xl border border-chart-blue/20 shadow-lg">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-chart-blue to-chart-purple bg-clip-text text-transparent">{test.timeSpent}m</div>
-                      <div className="text-sm font-semibold text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                        <span>⏱️</span> Time Spent
-                      </div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.timeSpent}m</div>
+                      <div className="text-sm text-muted-foreground">Time Spent</div>
                     </div>
-                    <div className="text-center p-6 bg-gradient-to-br from-chart-coral/10 to-chart-orange/10 rounded-xl border border-chart-coral/20 shadow-lg">
-                      <div className="text-3xl font-bold bg-gradient-to-r from-chart-coral to-chart-orange bg-clip-text text-transparent">{test.marksPerMinute.toFixed(2)}</div>
-                      <div className="text-sm font-semibold text-muted-foreground mt-2 flex items-center justify-center gap-1">
-                        <span>⚡</span> Efficiency
-                      </div>
+                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                      <div className="text-2xl font-bold text-primary">{test.marksPerMinute.toFixed(2)}</div>
+                      <div className="text-sm text-muted-foreground">Marks/Min</div>
                     </div>
                   </div>
                   
