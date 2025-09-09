@@ -358,76 +358,20 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
 };
 
 // Process data for progress tracking
-// =================================================================
-// 1. TYPE DEFINITIONS
-// =================================================================
-
-/** A generic type for any data entry with progress info. */
-type ProgressEntry = {
-  date: string;
-  numQuestions: number;
-  numCorrect: number;
-};
-
-/** Specific types for your data sources, matching the common shape. */
-type RevisionData = ProgressEntry;
-type FmtData = ProgressEntry; // <-- Renamed from MockTestData
-
-/** The shape of the aggregated data returned by the processing function. */
-type ProgressData = {
-  date: string; // This will be the day, week, or month key
-  totalQuestions: number;
-  totalCorrect: number;
-};
-
-// =================================================================
-// 2. HELPER FUNCTION
-// =================================================================
-
-/**
- * Calculates the ISO 8601 week number for a given date.
- * @param d The date object.
- * @returns The week number (1-53).
- */
-const getWeekNumber = (d: Date): number => {
-  // Copy date so we don't modify the original
-  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  // Set to nearest Thursday: current date + 4 - current day number
-  // Make Sunday's day number 7
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  // Get first day of year
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  // Calculate full weeks to nearest Thursday
-  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return weekNo;
-};
-
-// =================================================================
-// 3. DATA PROCESSING FUNCTION (MODIFIED)
-// =================================================================
-
-export const processProgressData = (
-  revisions: RevisionData[],
-  fmtData: FmtData[], // <-- Renamed parameter
-  timeframe: 'daily' | 'weekly' | 'monthly'
-): ProgressData[] => {
-  // Combine both data sources into a single array
-  const allEntries = [...revisions, ...fmtData]; // <-- Updated variable name
-
+export const processProgressData = (revisions: RevisionData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
   const progressMap = new Map<string, { totalQuestions: number; totalCorrect: number }>();
 
-  // Process the combined array
-  allEntries.forEach(entry => {
+  revisions.forEach(revision => {
     let key: string;
-    const date = new Date(entry.date);
+    const date = new Date(revision.date);
     
     if (timeframe === 'daily') {
-      key = entry.date;
+      key = revision.date;
     } else if (timeframe === 'weekly') {
       const year = date.getFullYear();
       const week = getWeekNumber(date);
       key = `${year}-W${week.toString().padStart(2, '0')}`;
-    } else { // monthly
+    } else {
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       key = `${year}-${month.toString().padStart(2, '0')}`;
@@ -438,8 +382,8 @@ export const processProgressData = (
     }
 
     const existing = progressMap.get(key)!;
-    existing.totalQuestions += entry.numQuestions;
-    existing.totalCorrect += entry.numCorrect;
+    existing.totalQuestions += revision.numQuestions;
+    existing.totalCorrect += revision.numCorrect;
   });
 
   return Array.from(progressMap.entries())
@@ -451,10 +395,7 @@ export const processProgressData = (
     .sort((a, b) => a.date.localeCompare(b.date));
 };
 
-// =================================================================
-// 4. CHART BUILDING FUNCTION (UNCHANGED)
-// =================================================================
-
+// Build line chart for progress tracking
 export const buildProgressChart = (progressData: ProgressData[]) => {
   const labels = progressData.map(item => item.date);
   const questionsData = progressData.map(item => item.totalQuestions);
@@ -466,7 +407,7 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
       {
         label: 'Total Questions',
         data: questionsData,
-        backgroundColor: 'rgba(0, 105, 217, 0.6)',
+        backgroundColor: 'rgba(0, 105, 217, 0.6)', // Blue with opacity
         borderColor: '#0069d9',
         borderWidth: 3,
         pointBackgroundColor: '#0069d9',
@@ -479,7 +420,7 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
       {
         label: 'Correct Answers',
         data: correctData,
-        backgroundColor: 'rgba(32, 201, 151, 0.6)',
+        backgroundColor: 'rgba(32, 201, 151, 0.6)', // Teal with opacity
         borderColor: '#20c997',
         borderWidth: 3,
         pointBackgroundColor: '#20c997',
