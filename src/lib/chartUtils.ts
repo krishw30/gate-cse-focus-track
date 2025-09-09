@@ -356,7 +356,7 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
 };
 
 // Process data for progress tracking
-export const processProgressData = (revisions: RevisionData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
+export const processProgressData = (revisions: RevisionData[], fmt:FmtData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
   const progressMap = new Map<string, { totalQuestions: number; totalCorrect: number }>();
 
   revisions.forEach(revision => {
