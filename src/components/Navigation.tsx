@@ -48,18 +48,6 @@ const Navigation = () => {
                 Add Revision
               </Button>
             </NavLink>
-
-            <NavLink
-              to="/add-flmt"
-              className={({ isActive }) =>
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-              }
-            >
-              <Button variant="ghost" size="sm">
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Add FLMT
-              </Button>
-            </NavLink>
             
             <NavLink
               to="/analysis"
