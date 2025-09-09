@@ -364,6 +364,7 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
 
   allEntries.forEach(revision => {
     let key: string;
+    
     const date = new Date(revision.date);
     
     if (timeframe === 'daily') {
@@ -382,11 +383,18 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
       progressMap.set(key, { totalQuestions: 0, totalCorrect: 0 });
     }
 
-    const existing = progressMap.get(key)!;
-    existing.totalQuestions += revision.numQuestions;
-    existing.totalCorrect += revision.numCorrect;
+   // Check which type of document this is and add accordingly
+    if ('numQuestions' in entry) {
+      // It's a RevisionData object
+      existing.totalQuestions += entry.numQuestions;
+      existing.totalCorrect += entry.numCorrect;
+    } else if ('correct' in entry) {
+      // It's an FmtData object
+      existing.totalQuestions += (entry.correct + entry.incorrect);
+      existing.totalCorrect += entry.correct;
+    }
+    // --- END OF CORRECTED LOGIC ---
   });
-
   return Array.from(progressMap.entries())
     .map(([date, data]) => ({
       date,
