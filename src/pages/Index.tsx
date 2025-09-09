@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, BarChart3, PlusCircle, FileText } from "lucide-react";
+import { Plus, BarChart3, PlusCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import AddQuestionModal from "@/components/AddQuestionModal";
 
@@ -20,7 +20,7 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Add Revision Card */}
           <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
             <CardHeader className="text-center">
@@ -78,26 +78,6 @@ const Index = () => {
               <Link to="/analysis">
                 <Button className="w-full" size="lg" variant="outline">
                   View Analytics
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* FLMT Analysis Card */}
-          <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2">
-                <FileText className="h-6 w-6 text-primary" />
-                FLMT Analysis
-              </CardTitle>
-              <CardDescription>
-                Track and analyze your mock test performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link to="/flmt-analysis">
-                <Button className="w-full" size="lg" variant="outline">
-                  View FLMT Analytics
                 </Button>
               </Link>
             </CardContent>
