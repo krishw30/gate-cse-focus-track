@@ -368,7 +368,7 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
     const date = new Date(entry.date);
     
     if (timeframe === 'daily') {
-      key = revision.date;
+      key = entry.date;
     } else if (timeframe === 'weekly') {
       const year = date.getFullYear();
       const week = getWeekNumber(date);
