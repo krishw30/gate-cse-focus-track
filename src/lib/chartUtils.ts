@@ -1,5 +1,9 @@
 // Chart utility functions for GATE CSE 2025 Revision Tracker
 
+// =================================================================
+// 1. SINGLE SOURCE OF TRUTH FOR TYPE DEFINITIONS
+// =================================================================
+
 export interface RevisionData {
   date: string;
   subject: string;
@@ -21,10 +25,14 @@ export interface SubjectAnalysis {
 }
 
 export interface ProgressData {
-  date: string;
+  date: string; // This will be the day, week, or month key
   totalQuestions: number;
   totalCorrect: number;
 }
+
+// =================================================================
+// 2. SUBJECT ANALYSIS FUNCTIONS
+// =================================================================
 
 // Process revisions data for subject analysis
 export const processSubjectAnalysis = (revisions: RevisionData[]): SubjectAnalysis => {
@@ -41,7 +49,7 @@ export const processSubjectAnalysis = (revisions: RevisionData[]): SubjectAnalys
     acc[revision.subject].totalCorrect += revision.numCorrect;
     acc[revision.subject].totalQuestions += revision.numQuestions;
     acc[revision.subject].attempts += 1;
-    acc[revision.subject].accuracy = 
+    acc[revision.subject].accuracy =
       (acc[revision.subject].totalCorrect / acc[revision.subject].totalQuestions) * 100;
     
     return acc;
@@ -50,7 +58,6 @@ export const processSubjectAnalysis = (revisions: RevisionData[]): SubjectAnalys
 
 // Build stacked horizontal bar chart for subjects
 export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
-  // Sort subjects alphabetically to ensure consistent tooltip matching
   const subjects = Object.keys(subjectAnalysis).sort();
   const correctData = subjects.map(subject => subjectAnalysis[subject].totalCorrect);
   const wrongData = subjects.map(subject => 
@@ -63,18 +70,14 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
       {
         label: 'Correct Answers',
         data: correctData,
-        backgroundColor: 'hsl(166, 64%, 48%)', // #20c997 - teal
-        borderColor: 'hsl(166, 64%, 38%)',
-        borderWidth: 0,
+        backgroundColor: 'hsl(166, 64%, 48%)',
         borderRadius: 4,
         borderSkipped: false,
       },
       {
         label: 'Incorrect Answers',
         data: wrongData,
-        backgroundColor: 'hsl(9, 100%, 70%)', // #ff6b6b - coral
-        borderColor: 'hsl(9, 100%, 60%)',
-        borderWidth: 0,
+        backgroundColor: 'hsl(9, 100%, 70%)',
         borderRadius: 4,
         borderSkipped: false,
       },
@@ -86,104 +89,26 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
     scales: {
-      x: {
-        stacked: true,
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
-      y: {
-        stacked: true,
-        type: 'category' as const,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
-    },
-    interaction: {
-      mode: 'point' as const,
-      intersect: false,
+      x: { stacked: true, beginAtZero: true },
+      y: { stacked: true, type: 'category' as const },
     },
     plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          font: {
-            family: 'Inter, system-ui',
-            weight: 600,
-          },
-          color: 'hsl(222.2, 84%, 4.9%)', // foreground color
-        },
-      },
       tooltip: {
-        backgroundColor: '#ffffff',
-        titleColor: '#212529',
-        bodyColor: '#212529',
-        borderColor: '#e9ecef',
-        borderWidth: 1,
-        cornerRadius: 12,
-        padding: 12,
         callbacks: {
-          beforeLabel: function() {
-            // Prevent multiple tooltips by returning empty for non-first dataset
-            return null;
-          },
-          title: function(context: any) {
-            return `📘 Subject: ${context[0].label}`;
-          },
-          label: function(context: any) {
-            // Get the subject name and find its data
+          title: (context: any) => `📘 Subject: ${context[0].label}`,
+          label: (context: any) => {
             const subjectName = context.label;
-            const subjectStats = Object.entries(subjectAnalysis).find(([key]) => key === subjectName);
-            
-            if (!subjectStats) return [];
-            
-            const [, stats] = subjectStats;
-            const correct = stats.totalCorrect;
-            const total = stats.totalQuestions;
-            const wrong = total - correct;
-            const accuracy = ((correct / total) * 100).toFixed(1);
-            
+            const stats = subjectAnalysis[subjectName];
+            if (!stats) return [];
+            const { totalCorrect, totalQuestions } = stats;
+            const wrong = totalQuestions - totalCorrect;
+            const accuracy = ((totalCorrect / totalQuestions) * 100).toFixed(1);
             return [
-              `✅ Correct Answers: ${correct}`,
+              `✅ Correct Answers: ${totalCorrect}`,
               `❌ Incorrect Answers: ${wrong}`,
               `📈 Accuracy: ${accuracy}%`
             ];
           },
-          labelColor: function(context: any) {
-            // Return colors for the labels
-            if (context.datasetIndex === 0) {
-              return {
-                borderColor: '#20c997',
-                backgroundColor: '#20c997'
-              };
-            } else {
-              return {
-                borderColor: '#ff6b6b',
-                backgroundColor: '#ff6b6b'
-              };
-            }
-          }
-        }
-      },
-      onHover: (event: any, elements: any) => {
-        if (event.native) {
-          event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
         }
       }
     },
@@ -191,6 +116,10 @@ export const buildSubjectChart = (subjectAnalysis: SubjectAnalysis) => {
 
   return { data, options };
 };
+
+// =================================================================
+// 3. TYPE ANALYSIS FUNCTIONS
+// =================================================================
 
 // Process revisions data for type analysis
 export const processTypeAnalysis = (revisions: RevisionData[]) => {
@@ -208,7 +137,7 @@ export const processTypeAnalysis = (revisions: RevisionData[]) => {
     acc[type].totalCorrect += revision.numCorrect;
     acc[type].totalQuestions += revision.numQuestions;
     acc[type].attempts += 1;
-    acc[type].accuracy = 
+    acc[type].accuracy =
       (acc[type].totalCorrect / acc[type].totalQuestions) * 100;
     
     return acc;
@@ -231,18 +160,14 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
       {
         label: 'Correct Answers',
         data: correctData,
-        backgroundColor: 'hsl(166, 64%, 48%)', // #20c997 - teal
-        borderColor: 'hsl(166, 64%, 38%)',
-        borderWidth: 0,
+        backgroundColor: 'hsl(166, 64%, 48%)',
         borderRadius: 4,
         borderSkipped: false,
       },
       {
         label: 'Incorrect Answers',
         data: wrongData,
-        backgroundColor: 'hsl(9, 100%, 70%)', // #ff6b6b - coral
-        borderColor: 'hsl(9, 100%, 60%)',
-        borderWidth: 0,
+        backgroundColor: 'hsl(9, 100%, 70%)',
         borderRadius: 4,
         borderSkipped: false,
       },
@@ -250,105 +175,30 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
   };
 
   const options = {
-    responsive: true,
+     responsive: true,
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
     scales: {
-      x: {
-        stacked: true,
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
-      y: {
-        stacked: true,
-        type: 'category' as const,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
+      x: { stacked: true, beginAtZero: true },
+      y: { stacked: true, type: 'category' as const },
     },
-    interaction: {
-      mode: 'point' as const,
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          font: {
-            family: 'Inter, system-ui',
-            weight: 600,
-          },
-          color: 'hsl(222.2, 84%, 4.9%)', // foreground
-        },
-      },
+     plugins: {
       tooltip: {
-        backgroundColor: '#ffffff',
-        titleColor: '#212529',
-        bodyColor: '#212529',
-        borderColor: '#e9ecef',
-        borderWidth: 1,
-        cornerRadius: 12,
-        padding: 12,
         callbacks: {
-          beforeLabel: function() {
-            return null;
-          },
-          title: function(context: any) {
-            return `📚 Type: ${context[0].label}`;
-          },
-          label: function(context: any) {
+          title: (context: any) => `📚 Type: ${context[0].label}`,
+          label: (context: any) => {
             const typeName = context.label;
-            const typeStats = Object.entries(typeAnalysis).find(([key]) => key === typeName);
-            
-            if (!typeStats) return [];
-            
-            const [, stats] = typeStats;
-            const correct = stats.totalCorrect;
-            const total = stats.totalQuestions;
-            const wrong = total - correct;
-            const accuracy = ((correct / total) * 100).toFixed(1);
-            
+            const stats = typeAnalysis[typeName];
+            if (!stats) return [];
+            const { totalCorrect, totalQuestions } = stats;
+            const wrong = totalQuestions - totalCorrect;
+            const accuracy = ((totalCorrect / totalQuestions) * 100).toFixed(1);
             return [
               `✅ Correct: ${correct}`,
               `❌ Incorrect: ${wrong}`,
               `📈 Accuracy: ${accuracy}%`
             ];
           },
-          labelColor: function(context: any) {
-            if (context.datasetIndex === 0) {
-              return {
-                borderColor: '#20c997',
-                backgroundColor: '#20c997'
-              };
-            } else {
-              return {
-                borderColor: '#ff6b6b',
-                backgroundColor: '#ff6b6b'
-              };
-            }
-          }
-        }
-      },
-      onHover: (event: any, elements: any) => {
-        if (event.native) {
-          event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
         }
       }
     },
@@ -357,66 +207,31 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
   return { data, options };
 };
 
-// Process data for progress tracking
-// =================================================================
-// 1. TYPE DEFINITIONS
-// =================================================================
-
-/** A generic type for any data entry with progress info. */
-type ProgressEntry = {
-  date: string;
-  numQuestions: number;
-  numCorrect: number;
-};
-
-/** Specific types for your data sources, matching the common shape. */
-type RevisionData = ProgressEntry;
-type FmtData = ProgressEntry; // <-- Renamed from MockTestData
-
-/** The shape of the aggregated data returned by the processing function. */
-type ProgressData = {
-  date: string; // This will be the day, week, or month key
-  totalQuestions: number;
-  totalCorrect: number;
-};
 
 // =================================================================
-// 2. HELPER FUNCTION
+// 4. PROGRESS TRACKING FUNCTIONS
 // =================================================================
 
-/**
- * Calculates the ISO 8601 week number for a given date.
- * @param d The date object.
- * @returns The week number (1-53).
- */
+// <-- FIX: All duplicate type definitions that were here have been removed.
+// We now use the main `RevisionData` and `ProgressData` interfaces from the top of the file.
+
 const getWeekNumber = (d: Date): number => {
-  // Copy date so we don't modify the original
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  // Set to nearest Thursday: current date + 4 - current day number
-  // Make Sunday's day number 7
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  // Get first day of year
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  // Calculate full weeks to nearest Thursday
-  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return weekNo;
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 };
-
-// =================================================================
-// 3. DATA PROCESSING FUNCTION (MODIFIED)
-// =================================================================
 
 export const processProgressData = (
   revisions: RevisionData[],
-  fmt: FmtData[], // <-- Renamed parameter
+  fmt: RevisionData[], // <-- FIX: Changed to use the main RevisionData interface
   timeframe: 'daily' | 'weekly' | 'monthly'
 ): ProgressData[] => {
   // Combine both data sources into a single array
-  const allEntries = [...revisions, ...fmtData]; // <-- Updated variable name
+  const allEntries = [...revisions, ...fmt];
 
   const progressMap = new Map<string, { totalQuestions: number; totalCorrect: number }>();
 
-  // Process the combined array
   allEntries.forEach(entry => {
     let key: string;
     const date = new Date(entry.date);
@@ -451,10 +266,6 @@ export const processProgressData = (
     .sort((a, b) => a.date.localeCompare(b.date));
 };
 
-// =================================================================
-// 4. CHART BUILDING FUNCTION (UNCHANGED)
-// =================================================================
-
 export const buildProgressChart = (progressData: ProgressData[]) => {
   const labels = progressData.map(item => item.date);
   const questionsData = progressData.map(item => item.totalQuestions);
@@ -469,9 +280,6 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
         backgroundColor: 'rgba(0, 105, 217, 0.6)',
         borderColor: '#0069d9',
         borderWidth: 3,
-        pointBackgroundColor: '#0069d9',
-        pointBorderColor: 'hsl(0 0% 100%)',
-        pointBorderWidth: 2,
         pointRadius: 5,
         tension: 0.4,
         fill: true,
@@ -482,9 +290,6 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
         backgroundColor: 'rgba(32, 201, 151, 0.6)',
         borderColor: '#20c997',
         borderWidth: 3,
-        pointBackgroundColor: '#20c997',
-        pointBorderColor: 'hsl(0 0% 100%)',
-        pointBorderWidth: 2,
         pointRadius: 5,
         tension: 0.4,
         fill: true,
@@ -499,55 +304,15 @@ export const buildProgressChart = (progressData: ProgressData[]) => {
       mode: 'index' as const,
       intersect: false,
     },
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          font: {
-            family: 'system-ui',
-            weight: 500,
-          },
-          color: 'hsl(222.2 84% 4.9%)',
-        },
-      },
-      tooltip: {
-        backgroundColor: 'hsl(0 0% 100%)',
-        titleColor: 'hsl(222.2 84% 4.9%)',
-        bodyColor: 'hsl(222.2 84% 4.9%)',
-        borderColor: 'hsl(214.3 31.8% 91.4%)',
-        borderWidth: 1,
-        cornerRadius: 8,
-      },
-    },
-    scales: {
-      x: {
-        grid: {
-          color: 'hsl(214.3 31.8% 91.4% / 0.5)',
-        },
-        ticks: {
-          color: 'hsl(215.4 16.3% 46.9%)',
-          font: {
-            family: 'system-ui',
-          },
-        },
-      },
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: 'hsl(214.3 31.8% 91.4% / 0.5)',
-        },
-        ticks: {
-          color: 'hsl(215.4 16.3% 46.9%)',
-          font: {
-            family: 'system-ui',
-          },
-        },
-      },
-    },
   };
 
   return { data, options };
 };
+
+
+// =================================================================
+// 5. TIME ANALYSIS FUNCTIONS
+// =================================================================
 
 // Process revisions data for time analysis
 export const processTimeAnalysis = (revisions: RevisionData[]) => {
@@ -566,6 +331,7 @@ export const processTimeAnalysis = (revisions: RevisionData[]) => {
       acc[revision.subject].totalTimeMinutes += revision.timeSpentMinutes!;
       acc[revision.subject].totalQuestions += revision.numQuestions;
       acc[revision.subject].attempts += 1;
+      // Calculate efficiency in questions per hour
       acc[revision.subject].efficiency = 
         acc[revision.subject].totalQuestions / (acc[revision.subject].totalTimeMinutes / 60);
       
@@ -586,9 +352,7 @@ export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
       {
         label: 'Time Spent (minutes)',
         data: timeData,
-        backgroundColor: 'hsl(267, 57%, 67%)', // chart-purple
-        borderColor: 'hsl(267, 57%, 57%)',
-        borderWidth: 0,
+        backgroundColor: 'hsl(267, 57%, 67%)',
         borderRadius: 4,
         borderSkipped: false,
       },
@@ -600,87 +364,24 @@ export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
     scales: {
-      x: {
-        beginAtZero: true,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
-      y: {
-        type: 'category' as const,
-        grid: {
-          color: 'rgba(0,0,0,0.05)',
-        },
-        ticks: {
-          color: 'hsl(215.4, 16.3%, 46.9%)', // muted-foreground
-          font: {
-            family: 'Inter, system-ui',
-            weight: 500,
-          },
-        },
-      },
+      x: { beginAtZero: true },
+      y: { type: 'category' as const },
     },
-    interaction: {
-      mode: 'point' as const,
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          font: {
-            family: 'Inter, system-ui',
-            weight: 600,
-          },
-          color: 'hsl(222.2, 84%, 4.9%)', // foreground
-        },
-      },
+     plugins: {
       tooltip: {
-        backgroundColor: '#ffffff',
-        titleColor: '#212529',
-        bodyColor: '#212529',
-        borderColor: '#e9ecef',
-        borderWidth: 1,
-        cornerRadius: 12,
-        padding: 12,
         callbacks: {
-          title: function(context: any) {
-            return `⏱️ Subject: ${context[0].label}`;
-          },
-          label: function(context: any) {
+          title: (context: any) => `⏱️ Subject: ${context[0].label}`,
+          label: (context: any) => {
             const subjectName = context.label;
-            const subjectStats = timeAnalysis[subjectName];
-            
-            if (!subjectStats) return [];
-            
-            const timeMinutes = subjectStats.totalTimeMinutes;
-            const questions = subjectStats.totalQuestions;
-            const efficiency = subjectStats.efficiency.toFixed(1);
-            
+            const stats = timeAnalysis[subjectName];
+            if (!stats) return [];
+            const { totalTimeMinutes, totalQuestions, efficiency } = stats;
             return [
-              `⏰ Time Spent: ${timeMinutes} minutes`,
-              `❓ Questions Attempted: ${questions}`,
-              `⚡ Efficiency: ${efficiency} questions/hour`
+              `⏰ Time Spent: ${totalTimeMinutes} minutes`,
+              `❓ Questions Attempted: ${totalQuestions}`,
+              `⚡ Efficiency: ${efficiency.toFixed(1)} questions/hour`
             ];
           },
-          labelColor: function() {
-            return {
-              borderColor: '#6f42c1',
-              backgroundColor: '#6f42c1'
-            };
-          }
-        }
-      },
-      onHover: (event: any, elements: any) => {
-        if (event.native) {
-          event.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
         }
       }
     },
@@ -688,12 +389,3 @@ export const buildTimeChart = (timeAnalysis: Record<string, any>) => {
 
   return { data, options };
 };
-
-// Helper function to get week number
-function getWeekNumber(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-}
