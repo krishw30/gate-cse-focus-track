@@ -120,7 +120,7 @@ const Analysis = () => {
   const subjectChart = buildSubjectChart(subjectAnalysis);
   
   // Recalculate progress data whenever timeframe changes
-  const progressData = processProgressData(revisions,fmt, timeframe);
+  const progressData = processProgressData(revisions,fmtData, timeframe);
   const progressChart = buildProgressChart(progressData);
 
   const typeAnalysis = processTypeAnalysis(revisions);
