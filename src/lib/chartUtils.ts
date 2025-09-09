@@ -362,40 +362,47 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
   const allEntries = [...revisions, ...fmt];
   const progressMap = new Map<string, { totalQuestions: number; totalCorrect: number }>();
 
-  allEntries.forEach(entry => {
-    let key: string;
-    
-    const date = new Date(entry.date);
-    
-    if (timeframe === 'daily') {
-      key = entry.date;
-    } else if (timeframe === 'weekly') {
-      const year = date.getFullYear();
-      const week = getWeekNumber(date);
-      key = `${year}-W${week.toString().padStart(2, '0')}`;
-    } else {
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      key = `${year}-${month.toString().padStart(2, '0')}`;
-    }
+  allEntries.forEach((entry, index) => {
+    // This 'try...catch' block makes the function crash-proof.
+    try {
+      // This is the normal logic we expect to run.
+      let key: string;
+      const date = new Date(entry.date as string);
 
-    if (!progressMap.has(key)) {
-      progressMap.set(key, { totalQuestions: 0, totalCorrect: 0 });
-    }
+      if (timeframe === 'daily') {
+        key = entry.date as string;
+      } else if (timeframe === 'weekly') {
+        const year = date.getFullYear();
+        const week = getWeekNumber(date);
+        key = `${year}-W${week.toString().padStart(2, '0')}`;
+      } else {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        key = `${year}-${month.toString().padStart(2, '0')}`;
+      }
 
-   // Check which type of document this is and add accordingly
-    const existing = progressMap.get(key)!
-    if ('numQuestions' in entry) {
-      // It's a RevisionData object
-      existing.totalQuestions += entry.numQuestions;
-      existing.totalCorrect += entry.numCorrect;
-    } else if ('correct' in entry) {
-      // It's an FmtData object
-      existing.totalQuestions += (entry.correct + entry.incorrect);
-      existing.totalCorrect += entry.correct;
+      if (!progressMap.has(key)) {
+        progressMap.set(key, { totalQuestions: 0, totalCorrect: 0 });
+      }
+
+      const existing = progressMap.get(key)!;
+      
+      if ('numQuestions' in entry) {
+        existing.totalQuestions += entry.numQuestions;
+        existing.totalCorrect += entry.numCorrect;
+      } else if ('correct' in entry) {
+        existing.totalQuestions += (entry.correct + entry.incorrect);
+        existing.totalCorrect += entry.correct;
+      }
+
+    } catch (error) {
+      // If any error occurs above, this block runs instead of crashing.
+      console.error(`An error occurred while processing an entry at index: ${index}`);
+      console.error("The problematic entry was:", entry);
+      console.error("The specific error was:", error);
     }
-    // --- END OF CORRECTED LOGIC ---
   });
+
   return Array.from(progressMap.entries())
     .map(([date, data]) => ({
       date,
@@ -404,7 +411,6 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 };
-
 // Build line chart for progress tracking
 export const buildProgressChart = (progressData: ProgressData[]) => {
   const labels = progressData.map(item => item.date);
