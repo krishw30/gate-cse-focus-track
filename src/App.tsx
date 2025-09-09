@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import AddRevision from "./pages/AddRevision";
 import Analysis from "./pages/Analysis";
+import FLMTAnalysis from "./pages/FLMTAnalysis";
+import AddFLMT from "./pages/AddFLMT";
 import DetailView from "./pages/DetailView";
 import Navigation from "./components/Navigation";
 import NotFound from "./pages/NotFound";
@@ -28,6 +30,8 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/add-revision" element={<AddRevision />} />
         <Route path="/analysis" element={<Analysis />} />
+        <Route path="/flmt-analysis" element={<FLMTAnalysis />} />
+        <Route path="/add-flmt" element={<AddFLMT />} />
         <Route path="/analysis/detail" element={<DetailView />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
