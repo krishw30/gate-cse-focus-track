@@ -408,7 +408,7 @@ const getWeekNumber = (d: Date): number => {
 
 export const processProgressData = (
   revisions: RevisionData[],
-  fmtData: FmtData[], // <-- Renamed parameter
+  fmt: FmtData[], // <-- Renamed parameter
   timeframe: 'daily' | 'weekly' | 'monthly'
 ): ProgressData[] => {
   // Combine both data sources into a single array
