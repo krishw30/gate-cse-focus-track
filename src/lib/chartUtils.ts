@@ -386,14 +386,15 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
       }
 
       const existing = progressMap.get(key)!;
-      
+      if (entry && typeof entry === 'object') {
+    
       if ('numQuestions' in entry) {
         existing.totalQuestions += entry.numQuestions;
         existing.totalCorrect += entry.numCorrect;
       } else if ('correct' in entry) {
         existing.totalQuestions += (entry.correct + entry.incorrect);
         existing.totalCorrect += entry.correct;
-      }
+      }}
 
     } catch (error) {
       // If any error occurs above, this block runs instead of crashing.
