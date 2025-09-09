@@ -365,7 +365,7 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
   allEntries.forEach(entry => {
     let key: string;
     
-    const date = new Date(revision.date);
+    const date = new Date(entry.date);
     
     if (timeframe === 'daily') {
       key = revision.date;
