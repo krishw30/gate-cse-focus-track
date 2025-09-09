@@ -359,10 +359,10 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
 
 // Process data for progress tracking
 export const processProgressData = (revisions: RevisionData[], fmt: RevisionData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
-  const entry = [...revisions, ...fmt];
+  const allEntries = [...revisions, ...fmt];
   const progressMap = new Map<string, { totalQuestions: number; totalCorrect: number }>();
 
-  entry.forEach(revision => {
+  allEntries.forEach(entry => {
     let key: string;
     
     const date = new Date(revision.date);
