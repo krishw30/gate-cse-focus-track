@@ -51,27 +51,40 @@ const Analysis = () => {
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchRevisions = async () => {
-      try {
-        const q = query(collection(db, "revisions"), orderBy("timestamp", "desc"));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => doc.data() as RevisionData);
-        setRevisions(data);
-      } catch (error) {
-        console.error("Error fetching revisions:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch revision data",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+ useEffect(() => {
+  const fetchAllData = async () => {
+    try {
+      // Create queries for both collections, ordering by date
+      const revisionsQuery = query(collection(db, "revisions"), orderBy("date", "desc"));
+      const fmtQuery = query(collection(db, "fmt"), orderBy("date", "desc"));
 
-    fetchRevisions();
-  }, [toast]);
+      // Fetch the data in parallel for speed
+      const [revisionsSnapshot, fmtSnapshot] = await Promise.all([
+        getDocs(revisionsQuery),
+        getDocs(fmtQuery),
+      ]);
+
+      // Process and set the state for both data sources
+      const revisionsData = revisionsSnapshot.docs.map(doc => doc.data() as RevisionData);
+      const fmtDocsData = fmtSnapshot.docs.map(doc => doc.data() as FmtData);
+      
+      setRevisions(revisionsData);
+      setFmtData(fmtDocsData);
+
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch analysis data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchAllData();
+}, [toast]);
 
   if (isLoading) {
     return (
