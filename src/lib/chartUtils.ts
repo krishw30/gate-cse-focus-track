@@ -384,6 +384,7 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
     }
 
    // Check which type of document this is and add accordingly
+    const existing = progressMap.get(key)!
     if ('numQuestions' in entry) {
       // It's a RevisionData object
       existing.totalQuestions += entry.numQuestions;
