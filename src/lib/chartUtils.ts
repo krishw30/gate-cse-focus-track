@@ -356,43 +356,68 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
 };
 
 // Process data for progress tracking
-export const processProgressData = (revisions: RevisionData[], fmt:FmtData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
+export const processProgressData = (revisions: RevisionData[], fmt: FmtData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
   const progressMap = new Map<string, { totalQuestions: number; totalCorrect: number }>();
-
-  revisions.forEach(revision => {
+  
+  // Step 1: Pre-process the FMT data into a separate map for quick lookups.
+  const fmtTotals = new Map<string, { questions: number; correct: number }>();
+  fmt.forEach(entry => {
+    const date = new Date(entry.date as string);
     let key: string;
-    const date = new Date(revision.date);
+
+    if (timeframe === 'daily') {
+      key = entry.date as string;
+    } else if (timeframe === 'weekly') {
+      const year = date.getFullYear();
+      const week = getWeekNumber(date); // Assumes getWeekNumber exists in your file
+      key = `${year}-W${week.toString().padStart(2, '0')}`;
+    } else { // monthly
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      key = `${year}-${month}`;
+    }
+
+    const totals = fmtTotals.get(key) || { questions: 0, correct: 0 };
+    totals.questions += entry.correct + entry.incorrect;
+    totals.correct += entry.correct;
+    fmtTotals.set(key, totals);
+  });
+
+  // Step 2: Process the Revisions data, adding it to the main map.
+  revisions.forEach(entry => {
+    const date = new Date(entry.date as string);
+    let key: string;
     
     if (timeframe === 'daily') {
-      key = revision.date;
+      key = entry.date as string;
     } else if (timeframe === 'weekly') {
       const year = date.getFullYear();
       const week = getWeekNumber(date);
       key = `${year}-W${week.toString().padStart(2, '0')}`;
-    } else {
+    } else { // monthly
       const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      key = `${year}-${month.toString().padStart(2, '0')}`;
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      key = `${year}-${month}`;
     }
 
-    if (!progressMap.has(key)) {
-      progressMap.set(key, { totalQuestions: 0, totalCorrect: 0 });
-    }
+    const existing = progressMap.get(key) || { totalQuestions: 0, totalCorrect: 0 };
+    existing.totalQuestions += entry.numQuestions;
+    existing.totalCorrect += entry.numCorrect;
+    progressMap.set(key, existing);
+  });
 
-    const existing = progressMap.get(key)!;
-    existing.totalQuestions += revision.numQuestions;
-    existing.totalCorrect += revision.numCorrect;
+  // Step 3: Combine the pre-processed fmt totals into the main map.
+  fmtTotals.forEach((totals, key) => {
+    const existing = progressMap.get(key) || { totalQuestions: 0, totalCorrect: 0 };
+    existing.totalQuestions += totals.questions;
+    existing.totalCorrect += totals.correct;
+    progressMap.set(key, existing);
   });
 
   return Array.from(progressMap.entries())
-    .map(([date, data]) => ({
-      date,
-      totalQuestions: data.totalQuestions,
-      totalCorrect: data.totalCorrect,
-    }))
+    .map(([date, data]) => ({ date, ...data }))
     .sort((a, b) => a.date.localeCompare(b.date));
 };
-
 // Build line chart for progress tracking
 export const buildProgressChart = (progressData: ProgressData[]) => {
   const labels = progressData.map(item => item.date);
