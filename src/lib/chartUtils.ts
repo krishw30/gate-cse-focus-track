@@ -1,5 +1,3 @@
-// Chart utility functions for GATE CSE 2025 Revision Tracker
-
 export interface RevisionData {
   date: string;
   subject: string;
@@ -358,50 +356,32 @@ export const buildTypeChart = (typeAnalysis: SubjectAnalysis) => {
 };
 
 // Process data for progress tracking
-export const processProgressData = (revisions: RevisionData[], fmt: RevisionData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
-  const allEntries = [...revisions, ...fmt];
+export const processProgressData = (revisions: RevisionData[], timeframe: 'daily' | 'weekly' | 'monthly'): ProgressData[] => {
   const progressMap = new Map<string, { totalQuestions: number; totalCorrect: number }>();
 
-  allEntries.forEach((entry, index) => {
-    // This 'try...catch' block makes the function crash-proof.
-    try {
-      // This is the normal logic we expect to run.
-      let key: string;
-      const date = new Date(entry.date as string);
-
-      if (timeframe === 'daily') {
-        key = entry.date as string;
-      } else if (timeframe === 'weekly') {
-        const year = date.getFullYear();
-        const week = getWeekNumber(date);
-        key = `${year}-W${week.toString().padStart(2, '0')}`;
-      } else {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        key = `${year}-${month.toString().padStart(2, '0')}`;
-      }
-
-      if (!progressMap.has(key)) {
-        progressMap.set(key, { totalQuestions: 0, totalCorrect: 0 });
-      }
-
-      const existing = progressMap.get(key)!;
-      if (entry && typeof entry === 'object') {
+  revisions.forEach(revision => {
+    let key: string;
+    const date = new Date(revision.date);
     
-      if ('numQuestions' in entry) {
-        existing.totalQuestions += entry.numQuestions;
-        existing.totalCorrect += entry.numCorrect;
-      } else if ('correct' in entry) {
-        existing.totalQuestions += (entry.correct + entry.incorrect);
-        existing.totalCorrect += entry.correct;
-      }}
-
-    } catch (error) {
-      // If any error occurs above, this block runs instead of crashing.
-      console.error(`An error occurred while processing an entry at index: ${index}`);
-      console.error("The problematic entry was:", entry);
-      console.error("The specific error was:", error);
+    if (timeframe === 'daily') {
+      key = revision.date;
+    } else if (timeframe === 'weekly') {
+      const year = date.getFullYear();
+      const week = getWeekNumber(date);
+      key = `${year}-W${week.toString().padStart(2, '0')}`;
+    } else {
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      key = `${year}-${month.toString().padStart(2, '0')}`;
     }
+
+    if (!progressMap.has(key)) {
+      progressMap.set(key, { totalQuestions: 0, totalCorrect: 0 });
+    }
+
+    const existing = progressMap.get(key)!;
+    existing.totalQuestions += revision.numQuestions;
+    existing.totalCorrect += revision.numCorrect;
   });
 
   return Array.from(progressMap.entries())
@@ -412,6 +392,7 @@ export const processProgressData = (revisions: RevisionData[], fmt: RevisionData
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 };
+
 // Build line chart for progress tracking
 export const buildProgressChart = (progressData: ProgressData[]) => {
   const labels = progressData.map(item => item.date);
