@@ -46,6 +46,7 @@ ChartJS.register(
 
 const Analysis = () => {
   const [revisions, setRevisions] = useState<RevisionData[]>([]);
+  const [fmtData, setFmtData] = useState<FmtData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const { toast } = useToast();
@@ -106,7 +107,7 @@ const Analysis = () => {
   const subjectChart = buildSubjectChart(subjectAnalysis);
   
   // Recalculate progress data whenever timeframe changes
-  const progressData = processProgressData(revisions, timeframe);
+  const progressData = processProgressData(revisions,fmt, timeframe);
   const progressChart = buildProgressChart(progressData);
 
   const typeAnalysis = processTypeAnalysis(revisions);
