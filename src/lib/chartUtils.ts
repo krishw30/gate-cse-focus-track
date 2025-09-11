@@ -3,7 +3,7 @@ export interface RevisionData {
   subject: string;
   numQuestions: number;
   numCorrect: number;
-  type: "DPP" | "PYQ" | "MUck Test" | "Other";
+  type: "DPP" | "PYQ" | "Mock Test" | "Other";
   remarks: string;
   timeSpentMinutes?: number;
   weakTopics?: string;
