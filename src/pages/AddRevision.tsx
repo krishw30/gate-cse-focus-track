@@ -25,7 +25,7 @@ const subjects = [
   "Operating System",
   "Databases",
   "Computer Networks",
-  "Discrete Mathematics"
+  "Discrete Mathematics",
   "Aptitude"
 ];
 
