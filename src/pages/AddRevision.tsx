@@ -26,6 +26,7 @@ const subjects = [
   "Databases",
   "Computer Networks",
   "Discrete Mathematics"
+  "Aptitude"
 ];
 
 const revisionTypes = [
