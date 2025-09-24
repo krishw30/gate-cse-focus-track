@@ -12,7 +12,7 @@ import {
   LineElement,
   PointElement,
 } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import { Bar, Line, Chart } from 'react-chartjs-2';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,10 @@ import {
   buildTypeChart,
   processTimeAnalysis,
   buildTimeChart,
+  calculateAvgQuestions,
+  processDailyAvgData,
+  buildDailyAvgChart,
+  generateInsights,
 } from "@/lib/chartUtils";
 
 ChartJS.register(
@@ -48,6 +52,7 @@ const Analysis = () => {
   const [revisions, setRevisions] = useState<RevisionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [avgTimeframe, setAvgTimeframe] = useState<'week' | 'month' | 'all'>('week');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -119,6 +124,12 @@ const Analysis = () => {
   const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
   const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
   const overallAccuracy = totalQuestions > 0 ? ((totalCorrect / totalQuestions) * 100).toFixed(1) : '0';
+  const avgQuestionsPerDay = calculateAvgQuestions(revisions, 'all');
+  
+  // Calculate daily avg data and insights
+  const dailyAvgData = processDailyAvgData(revisions, avgTimeframe);
+  const dailyAvgChart = buildDailyAvgChart(dailyAvgData);
+  const insights = generateInsights(revisions);
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -133,7 +144,7 @@ const Analysis = () => {
       </div>
       
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Revisions</CardTitle>
@@ -160,13 +171,23 @@ const Analysis = () => {
             <div className="text-2xl font-bold text-chart-accent">{overallAccuracy}%</div>
           </CardContent>
         </Card>
+        
+        <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Questions/Day</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-chart-accent">{avgQuestionsPerDay.toFixed(1)}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="subjects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 bg-muted rounded-xl p-1">
+        <TabsList className="grid w-full grid-cols-5 bg-muted rounded-xl p-1">
           <TabsTrigger value="subjects" className="font-medium rounded-lg">Subject Analysis</TabsTrigger>
           <TabsTrigger value="types" className="font-medium rounded-lg">Analysis by Type</TabsTrigger>
           <TabsTrigger value="progress" className="font-medium rounded-lg">Progress Tracking</TabsTrigger>
+          <TabsTrigger value="daily-avg" className="font-medium rounded-lg">Daily Average</TabsTrigger>
           <TabsTrigger value="time" className="font-medium rounded-lg">Time Analysis</TabsTrigger>
         </TabsList>
 
@@ -270,6 +291,77 @@ const Analysis = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="daily-avg" className="space-y-6">
+          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <CardHeader>
+              <CardTitle className="font-semibold text-foreground">Daily Average Questions</CardTitle>
+              <CardDescription>
+                Questions attempted per day with accuracy trend overlay
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 flex gap-2 flex-wrap">
+                <Button
+                  variant={avgTimeframe === 'week' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAvgTimeframe('week')}
+                  className="font-medium transition-all duration-200 hover:scale-105"
+                >
+                  This Week
+                </Button>
+                <Button
+                  variant={avgTimeframe === 'month' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAvgTimeframe('month')}
+                  className="font-medium transition-all duration-200 hover:scale-105"
+                >
+                  This Month
+                </Button>
+                <Button
+                  variant={avgTimeframe === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setAvgTimeframe('all')}
+                  className="font-medium transition-all duration-200 hover:scale-105"
+                >
+                  All Time
+                </Button>
+              </div>
+              
+              <div className="h-[400px]">
+                <Chart
+                  type="bar"
+                  data={dailyAvgChart.data}
+                  options={dailyAvgChart.options}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Progress Insights */}
+          {insights.length > 0 && (
+            <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <CardHeader>
+                <CardTitle className="font-semibold text-foreground">Progress Insights</CardTitle>
+                <CardDescription>
+                  AI-generated insights about your revision progress
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {insights.map((insight, index) => (
+                    <div 
+                      key={index}
+                      className="p-4 bg-muted/30 rounded-lg border-l-4 border-chart-accent"
+                    >
+                      <p className="text-sm text-foreground font-medium">{insight}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="time" className="space-y-6">

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Calendar, BarChart3, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { RevisionData } from "@/lib/chartUtils";
+import { RevisionData, calculateAvgQuestions } from "@/lib/chartUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   Chart as ChartJS,
@@ -446,6 +446,24 @@ const DetailView = () => {
                 <SelectItem value="all-time">All Time</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Avg Questions Display */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Avg Questions/Day:</span>
+              <div className="flex gap-2">
+                <span className="font-semibold text-chart-accent">
+                  Week: {calculateAvgQuestions(getFilteredRevisions(), 'week').toFixed(1)}
+                </span>
+                <span className="font-semibold text-chart-accent">
+                  Month: {calculateAvgQuestions(getFilteredRevisions(), 'month').toFixed(1)}
+                </span>
+                <span className="font-semibold text-chart-accent">
+                  All: {calculateAvgQuestions(revisions, 'all').toFixed(1)}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Export CSV Button */}

@@ -636,3 +636,323 @@ function getWeekNumber(date: Date): number {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
+
+// Calculate average questions per day
+export const calculateAvgQuestions = (revisions: RevisionData[], timeframe: 'week' | 'month' | 'all') => {
+  if (revisions.length === 0) return 0;
+
+  const now = new Date();
+  let filteredRevisions = revisions;
+  let days = 0;
+
+  if (timeframe === 'week') {
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filteredRevisions = revisions.filter(r => new Date(r.date) >= weekAgo);
+    days = 7;
+  } else if (timeframe === 'month') {
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    filteredRevisions = revisions.filter(r => new Date(r.date) >= monthAgo);
+    days = 30;
+  } else {
+    // All time - calculate actual days since first revision
+    if (revisions.length > 0) {
+      const firstDate = new Date(Math.min(...revisions.map(r => new Date(r.date).getTime())));
+      days = Math.ceil((now.getTime() - firstDate.getTime()) / (24 * 60 * 60 * 1000));
+    }
+  }
+
+  const totalQuestions = filteredRevisions.reduce((sum, r) => sum + r.numQuestions, 0);
+  return days > 0 ? totalQuestions / days : 0;
+};
+
+// Process daily average questions data
+export const processDailyAvgData = (revisions: RevisionData[], timeframe: 'week' | 'month' | 'all') => {
+  if (revisions.length === 0) return [];
+
+  const now = new Date();
+  let startDate: Date;
+  let filteredRevisions = revisions;
+
+  if (timeframe === 'week') {
+    startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000); // Last 7 days including today
+    filteredRevisions = revisions.filter(r => new Date(r.date) >= startDate);
+  } else if (timeframe === 'month') {
+    startDate = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000); // Last 30 days including today
+    filteredRevisions = revisions.filter(r => new Date(r.date) >= startDate);
+  } else {
+    // All time - start from first revision
+    if (revisions.length === 0) return [];
+    startDate = new Date(Math.min(...revisions.map(r => new Date(r.date).getTime())));
+  }
+
+  // Group by date
+  const dailyData = new Map<string, { questions: number; correct: number; accuracy: number }>();
+  
+  filteredRevisions.forEach(revision => {
+    const date = revision.date;
+    if (!dailyData.has(date)) {
+      dailyData.set(date, { questions: 0, correct: 0, accuracy: 0 });
+    }
+    const existing = dailyData.get(date)!;
+    existing.questions += revision.numQuestions;
+    existing.correct += revision.numCorrect;
+    existing.accuracy = existing.questions > 0 ? (existing.correct / existing.questions) * 100 : 0;
+  });
+
+  // Fill in missing dates with 0 questions for recent timeframes
+  if (timeframe === 'week' || timeframe === 'month') {
+    const days = timeframe === 'week' ? 7 : 30;
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
+      if (!dailyData.has(dateStr)) {
+        dailyData.set(dateStr, { questions: 0, correct: 0, accuracy: 0 });
+      }
+    }
+  }
+
+  return Array.from(dailyData.entries())
+    .map(([date, data]) => ({
+      date,
+      questions: data.questions,
+      correct: data.correct,
+      accuracy: data.accuracy
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+};
+
+// Build daily average questions chart
+export const buildDailyAvgChart = (dailyData: Array<{ date: string; questions: number; correct: number; accuracy: number }>) => {
+  const labels = dailyData.map(item => {
+    const date = new Date(item.date);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+  
+  const questionsData = dailyData.map(item => item.questions);
+  const accuracyData = dailyData.map(item => item.accuracy);
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        type: 'bar' as const,
+        label: 'Questions per Day',
+        data: questionsData,
+        backgroundColor: 'hsl(217, 91%, 60%)',
+        borderColor: 'hsl(217, 91%, 50%)',
+        borderWidth: 2,
+        borderRadius: 6,
+        yAxisID: 'y'
+      },
+      {
+        type: 'line' as const,
+        label: 'Accuracy %',
+        data: accuracyData,
+        borderColor: 'hsl(166, 64%, 48%)',
+        backgroundColor: 'hsl(166, 64%, 48%)',
+        borderWidth: 3,
+        pointBackgroundColor: 'hsl(166, 64%, 48%)',
+        pointBorderColor: 'hsl(0 0% 100%)',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        tension: 0.4,
+        yAxisID: 'y1',
+        fill: false
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index' as const,
+      intersect: false
+    },
+    scales: {
+      x: {
+        grid: {
+          color: 'hsl(214.3 31.8% 91.4% / 0.5)',
+        },
+        ticks: {
+          color: 'hsl(215.4 16.3% 46.9%)',
+          font: {
+            family: 'system-ui',
+          },
+        },
+      },
+      y: {
+        type: 'linear' as const,
+        display: true,
+        position: 'left' as const,
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Questions per Day',
+          color: 'hsl(215.4 16.3% 46.9%)'
+        },
+        grid: {
+          color: 'hsl(214.3 31.8% 91.4% / 0.5)',
+        },
+        ticks: {
+          color: 'hsl(215.4 16.3% 46.9%)',
+        },
+      },
+      y1: {
+        type: 'linear' as const,
+        display: true,
+        position: 'right' as const,
+        beginAtZero: true,
+        max: 100,
+        title: {
+          display: true,
+          text: 'Accuracy %',
+          color: 'hsl(215.4 16.3% 46.9%)'
+        },
+        grid: {
+          drawOnChartArea: false,
+        },
+        ticks: {
+          color: 'hsl(215.4 16.3% 46.9%)',
+        },
+      }
+    },
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          font: {
+            family: 'system-ui',
+            weight: 500,
+          },
+          color: 'hsl(222.2 84% 4.9%)',
+        },
+      },
+      tooltip: {
+        backgroundColor: 'hsl(0 0% 100%)',
+        titleColor: 'hsl(222.2 84% 4.9%)',
+        bodyColor: 'hsl(222.2 84% 4.9%)',
+        borderColor: 'hsl(214.3 31.8% 91.4%)',
+        borderWidth: 1,
+        cornerRadius: 8,
+      },
+    }
+  };
+
+  return { data, options };
+};
+
+// Generate progress insights
+export const generateInsights = (revisions: RevisionData[]) => {
+  if (revisions.length === 0) return [];
+
+  const insights: string[] = [];
+  const now = new Date();
+  
+  // Sort revisions by date
+  const sortedRevisions = [...revisions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  // Total questions milestones
+  const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
+  
+  if (totalQuestions >= 1000) {
+    let questionsCount = 0;
+    let firstMilestone: Date | null = null;
+    let secondMilestone: Date | null = null;
+    
+    for (const revision of sortedRevisions) {
+      questionsCount += revision.numQuestions;
+      
+      if (questionsCount >= 1000 && !firstMilestone) {
+        firstMilestone = new Date(revision.date);
+      }
+      if (questionsCount >= 2000 && !secondMilestone) {
+        secondMilestone = new Date(revision.date);
+        break;
+      }
+    }
+    
+    if (firstMilestone && secondMilestone) {
+      const daysBetween = Math.ceil((secondMilestone.getTime() - firstMilestone.getTime()) / (24 * 60 * 60 * 1000));
+      const firstMilestoneDays = Math.ceil((firstMilestone.getTime() - new Date(sortedRevisions[0].date).getTime()) / (24 * 60 * 60 * 1000));
+      insights.push(`🎯 You reached your first 1000 questions in ${firstMilestoneDays} days, the next 1000 in ${daysBetween} days!`);
+    } else if (firstMilestone) {
+      const days = Math.ceil((firstMilestone.getTime() - new Date(sortedRevisions[0].date).getTime()) / (24 * 60 * 60 * 1000));
+      insights.push(`🎯 Great milestone! You reached 1000 questions in ${days} days.`);
+    }
+  }
+
+  // Weekly accuracy comparison
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const lastWeekRevisions = revisions.filter(r => new Date(r.date) >= weekAgo);
+  
+  if (lastWeekRevisions.length > 0) {
+    const weekQuestions = lastWeekRevisions.reduce((sum, r) => sum + r.numQuestions, 0);
+    const weekCorrect = lastWeekRevisions.reduce((sum, r) => sum + r.numCorrect, 0);
+    const weekAccuracy = (weekCorrect / weekQuestions) * 100;
+    
+    const overallCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
+    const overallAccuracy = (overallCorrect / totalQuestions) * 100;
+    
+    if (weekAccuracy > overallAccuracy + 5) {
+      insights.push(`📈 Excellent! Last week's accuracy (${weekAccuracy.toFixed(1)}%) was significantly higher than your overall (${overallAccuracy.toFixed(1)}%).`);
+    } else if (weekAccuracy < overallAccuracy - 5) {
+      insights.push(`📊 Last week's accuracy (${weekAccuracy.toFixed(1)}%) was lower than your overall (${overallAccuracy.toFixed(1)}%). Keep pushing!`);
+    }
+  }
+
+  // Monthly comparison
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+  
+  const thisMonthRevisions = revisions.filter(r => new Date(r.date) >= monthAgo);
+  const lastMonthRevisions = revisions.filter(r => new Date(r.date) >= twoMonthsAgo && new Date(r.date) < monthAgo);
+  
+  if (thisMonthRevisions.length > 0) {
+    const thisMonthQuestions = thisMonthRevisions.reduce((sum, r) => sum + r.numQuestions, 0);
+    const thisMonthAvg = thisMonthQuestions / 30;
+    
+    if (lastMonthRevisions.length > 0) {
+      const lastMonthQuestions = lastMonthRevisions.reduce((sum, r) => sum + r.numQuestions, 0);
+      const lastMonthAvg = lastMonthQuestions / 30;
+      
+      if (thisMonthAvg > lastMonthAvg) {
+        insights.push(`🚀 This month you averaged ${thisMonthAvg.toFixed(0)} questions/day, compared to ${lastMonthAvg.toFixed(0)}/day last month!`);
+      }
+    } else {
+      insights.push(`📅 This month you're averaging ${thisMonthAvg.toFixed(0)} questions per day.`);
+    }
+  }
+
+  // Pace prediction
+  if (sortedRevisions.length >= 7) {
+    const recentWeek = sortedRevisions.slice(-7);
+    const recentAvg = recentWeek.reduce((sum, r) => sum + r.numQuestions, 0) / 7;
+    
+    if (recentAvg > 0) {
+      const daysToNext1000 = Math.ceil((Math.ceil(totalQuestions / 1000) * 1000 - totalQuestions) / recentAvg);
+      if (daysToNext1000 <= 30 && totalQuestions < (Math.ceil(totalQuestions / 1000) * 1000)) {
+        const targetQuestions = Math.ceil(totalQuestions / 1000) * 1000;
+        insights.push(`⚡ At this pace, you'll cross ${targetQuestions} questions in ${daysToNext1000} days!`);
+      }
+    }
+  }
+
+  // Subject strength insight
+  const subjectStats = processSubjectAnalysis(revisions);
+  const subjects = Object.entries(subjectStats);
+  if (subjects.length > 1) {
+    const bestSubject = subjects.reduce((best, current) => 
+      current[1].accuracy > best[1].accuracy ? current : best
+    );
+    const weakestSubject = subjects.reduce((weakest, current) => 
+      current[1].accuracy < weakest[1].accuracy ? current : weakest
+    );
+    
+    if (bestSubject[1].accuracy - weakestSubject[1].accuracy > 20) {
+      insights.push(`💪 Your strongest subject is ${bestSubject[0]} (${bestSubject[1].accuracy.toFixed(1)}% accuracy), focus more on ${weakestSubject[0]} (${weakestSubject[1].accuracy.toFixed(1)}%).`);
+    }
+  }
+
+  return insights.slice(0, 4); // Return max 4 insights
+};
