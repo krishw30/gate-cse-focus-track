@@ -665,79 +665,146 @@ export const calculateAvgQuestions = (revisions: RevisionData[], timeframe: 'wee
   return days > 0 ? totalQuestions / days : 0;
 };
 
-// Process daily average questions data
-export const processDailyAvgData = (revisions: RevisionData[], timeframe: 'week' | 'month' | 'all') => {
+// Process daily average questions data with weekly/monthly grouping
+export const processDailyAvgData = (revisions: RevisionData[], timeframe: 'weekly' | 'monthly') => {
   if (revisions.length === 0) return [];
 
   const now = new Date();
-  let startDate: Date;
-  let filteredRevisions = revisions;
-
-  if (timeframe === 'week') {
-    startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000); // Last 7 days including today
-    filteredRevisions = revisions.filter(r => new Date(r.date) >= startDate);
-  } else if (timeframe === 'month') {
-    startDate = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000); // Last 30 days including today
-    filteredRevisions = revisions.filter(r => new Date(r.date) >= startDate);
-  } else {
-    // All time - start from first revision
-    if (revisions.length === 0) return [];
-    startDate = new Date(Math.min(...revisions.map(r => new Date(r.date).getTime())));
-  }
-
-  // Group by date
-  const dailyData = new Map<string, { questions: number; correct: number; accuracy: number }>();
   
-  filteredRevisions.forEach(revision => {
-    const date = revision.date;
-    if (!dailyData.has(date)) {
-      dailyData.set(date, { questions: 0, correct: 0, accuracy: 0 });
+  // Get earliest revision date
+  const earliestDate = new Date(Math.min(...revisions.map(r => new Date(r.date).getTime())));
+  
+  // Create continuous timeline from earliest date to now
+  const periods = new Map<string, { questions: number; correct: number; accuracy: number; avgQuestionsPerDay: number; period: string }>();
+  
+  // Group revisions by period
+  revisions.forEach(revision => {
+    const date = new Date(revision.date);
+    let periodKey: string;
+    let periodLabel: string;
+    
+    if (timeframe === 'weekly') {
+      const year = date.getFullYear();
+      const week = getWeekNumber(date);
+      periodKey = `${year}-W${week.toString().padStart(2, '0')}`;
+      periodLabel = `Week ${week} (${getWeekDateRange(year, week)})`;
+    } else {
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      periodKey = `${year}-${month.toString().padStart(2, '0')}`;
+      periodLabel = `${date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
     }
-    const existing = dailyData.get(date)!;
+    
+    if (!periods.has(periodKey)) {
+      periods.set(periodKey, { questions: 0, correct: 0, accuracy: 0, avgQuestionsPerDay: 0, period: periodLabel });
+    }
+    
+    const existing = periods.get(periodKey)!;
     existing.questions += revision.numQuestions;
     existing.correct += revision.numCorrect;
-    existing.accuracy = existing.questions > 0 ? (existing.correct / existing.questions) * 100 : 0;
-  });
-
-  // Fill in missing dates with 0 questions for recent timeframes
-  if (timeframe === 'week' || timeframe === 'month') {
-    const days = timeframe === 'week' ? 7 : 30;
-    for (let i = 0; i < days; i++) {
-      const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-      const dateStr = date.toISOString().split('T')[0];
-      if (!dailyData.has(dateStr)) {
-        dailyData.set(dateStr, { questions: 0, correct: 0, accuracy: 0 });
-      }
-    }
-  }
-
-  return Array.from(dailyData.entries())
-    .map(([date, data]) => ({
-      date,
-      questions: data.questions,
-      correct: data.correct,
-      accuracy: data.accuracy
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date));
-};
-
-// Build daily average questions chart
-export const buildDailyAvgChart = (dailyData: Array<{ date: string; questions: number; correct: number; accuracy: number }>) => {
-  const labels = dailyData.map(item => {
-    const date = new Date(item.date);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   });
   
-  const questionsData = dailyData.map(item => item.questions);
-  const accuracyData = dailyData.map(item => item.accuracy);
+  // Fill in missing periods with 0 values
+  if (timeframe === 'weekly') {
+    let currentDate = new Date(earliestDate);
+    while (currentDate <= now) {
+      const year = currentDate.getFullYear();
+      const week = getWeekNumber(currentDate);
+      const periodKey = `${year}-W${week.toString().padStart(2, '0')}`;
+      
+      if (!periods.has(periodKey)) {
+        const periodLabel = `Week ${week} (${getWeekDateRange(year, week)})`;
+        periods.set(periodKey, { questions: 0, correct: 0, accuracy: 0, avgQuestionsPerDay: 0, period: periodLabel });
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+  } else {
+    let currentDate = new Date(earliestDate.getFullYear(), earliestDate.getMonth(), 1);
+    while (currentDate <= now) {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const periodKey = `${year}-${month.toString().padStart(2, '0')}`;
+      
+      if (!periods.has(periodKey)) {
+        const periodLabel = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        periods.set(periodKey, { questions: 0, correct: 0, accuracy: 0, avgQuestionsPerDay: 0, period: periodLabel });
+      }
+      
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+  }
+  
+  // Calculate averages and accuracy
+  periods.forEach((data, key) => {
+    if (data.questions > 0) {
+      data.accuracy = (data.correct / data.questions) * 100;
+      
+      if (timeframe === 'weekly') {
+        data.avgQuestionsPerDay = data.questions / 7;
+      } else {
+        // Get days in the month
+        const [year, month] = key.split('-');
+        const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+        data.avgQuestionsPerDay = data.questions / daysInMonth;
+      }
+    }
+  });
+  
+  return Array.from(periods.entries())
+    .map(([key, data]) => ({
+      period: key,
+      periodLabel: data.period,
+      questions: data.questions,
+      correct: data.correct,
+      accuracy: data.accuracy,
+      avgQuestionsPerDay: data.avgQuestionsPerDay
+    }))
+    .sort((a, b) => a.period.localeCompare(b.period));
+};
+
+// Helper function to get week date range
+function getWeekDateRange(year: number, week: number): string {
+  const jan1 = new Date(year, 0, 1);
+  const days = (week - 1) * 7;
+  const weekStart = new Date(jan1.getTime() + days * 24 * 60 * 60 * 1000);
+  
+  // Adjust to Monday
+  const dayOfWeek = weekStart.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  weekStart.setDate(weekStart.getDate() + mondayOffset);
+  
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  
+  const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  
+  return `${formatDate(weekStart)}–${formatDate(weekEnd)}`;
+}
+
+// Build daily average questions chart with proper period handling
+export const buildDailyAvgChart = (periodData: Array<{ period: string; periodLabel: string; questions: number; correct: number; accuracy: number; avgQuestionsPerDay: number }>) => {
+  const labels = periodData.map(item => {
+    // For weekly data, show short format, for monthly show month name
+    if (item.period.includes('W')) {
+      const parts = item.periodLabel.match(/Week (\d+) \(([^)]+)\)/);
+      return parts ? `W${parts[1]}` : item.period;
+    } else {
+      const date = new Date(item.period + '-01');
+      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    }
+  });
+  
+  const avgQuestionsData = periodData.map(item => item.avgQuestionsPerDay);
+  const accuracyData = periodData.map(item => item.accuracy);
 
   const data = {
     labels,
     datasets: [
       {
         type: 'bar' as const,
-        label: 'Questions per Day',
-        data: questionsData,
+        label: 'Avg Questions/Day',
+        data: avgQuestionsData,
         backgroundColor: 'hsl(217, 91%, 60%)',
         borderColor: 'hsl(217, 91%, 50%)',
         borderWidth: 2,
@@ -788,7 +855,7 @@ export const buildDailyAvgChart = (dailyData: Array<{ date: string; questions: n
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Questions per Day',
+          text: 'Avg Questions/Day',
           color: 'hsl(215.4 16.3% 46.9%)'
         },
         grid: {
@@ -835,6 +902,22 @@ export const buildDailyAvgChart = (dailyData: Array<{ date: string; questions: n
         borderColor: 'hsl(214.3 31.8% 91.4%)',
         borderWidth: 1,
         cornerRadius: 8,
+        callbacks: {
+          title: function(context: any) {
+            const index = context[0].dataIndex;
+            return periodData[index].periodLabel;
+          },
+          label: function(context: any) {
+            const index = context.dataIndex;
+            const item = periodData[index];
+            
+            if (context.dataset.label === 'Avg Questions/Day') {
+              return `Avg Q/day: ${item.avgQuestionsPerDay.toFixed(1)}`;
+            } else {
+              return `Accuracy: ${item.accuracy.toFixed(1)}%`;
+            }
+          }
+        }
       },
     }
   };

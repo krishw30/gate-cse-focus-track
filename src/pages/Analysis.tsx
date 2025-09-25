@@ -52,7 +52,7 @@ const Analysis = () => {
   const [revisions, setRevisions] = useState<RevisionData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [avgTimeframe, setAvgTimeframe] = useState<'week' | 'month' | 'all'>('week');
+  const [avgTimeframe, setAvgTimeframe] = useState<'weekly' | 'monthly'>('weekly');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -298,34 +298,26 @@ const Analysis = () => {
             <CardHeader>
               <CardTitle className="font-semibold text-foreground">Daily Average Questions</CardTitle>
               <CardDescription>
-                Questions attempted per day with accuracy trend overlay
+                Average questions per day by week/month with accuracy trend overlay
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-4 flex gap-2 flex-wrap">
                 <Button
-                  variant={avgTimeframe === 'week' ? 'default' : 'outline'}
+                  variant={avgTimeframe === 'weekly' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setAvgTimeframe('week')}
+                  onClick={() => setAvgTimeframe('weekly')}
                   className="font-medium transition-all duration-200 hover:scale-105"
                 >
-                  This Week
+                  Weekly
                 </Button>
                 <Button
-                  variant={avgTimeframe === 'month' ? 'default' : 'outline'}
+                  variant={avgTimeframe === 'monthly' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setAvgTimeframe('month')}
+                  onClick={() => setAvgTimeframe('monthly')}
                   className="font-medium transition-all duration-200 hover:scale-105"
                 >
-                  This Month
-                </Button>
-                <Button
-                  variant={avgTimeframe === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setAvgTimeframe('all')}
-                  className="font-medium transition-all duration-200 hover:scale-105"
-                >
-                  All Time
+                  Monthly
                 </Button>
               </div>
               
