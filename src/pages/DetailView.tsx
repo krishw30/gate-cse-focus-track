@@ -72,6 +72,39 @@ const DetailView = () => {
     fetchRevisions();
   }, [toast]);
 
+  // Calculate all-time average (constant)
+  const getAllTimeAverage = () => {
+    if (revisions.length === 0) return 0;
+    
+    const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
+    const dates = [...new Set(revisions.map(r => r.date))].sort();
+    
+    if (dates.length === 0) return 0;
+    
+    const firstDate = new Date(dates[0]);
+    const lastDate = new Date(dates[dates.length - 1]);
+    const daysDiff = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    return totalQuestions / daysDiff;
+  };
+
+  // Calculate filtered average (dynamic)
+  const getFilteredAverage = () => {
+    const filteredRevisions = getFilteredRevisions();
+    if (filteredRevisions.length === 0) return 0;
+    
+    const totalQuestions = filteredRevisions.reduce((sum, r) => sum + r.numQuestions, 0);
+    const dates = [...new Set(filteredRevisions.map(r => r.date))].sort();
+    
+    if (dates.length === 0) return 0;
+    
+    const firstDate = new Date(dates[0]);
+    const lastDate = new Date(dates[dates.length - 1]);
+    const daysDiff = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    
+    return totalQuestions / daysDiff;
+  };
+
   // Filter data based on period
   const getFilteredRevisions = () => {
     const now = new Date();
@@ -450,17 +483,17 @@ const DetailView = () => {
 
           {/* Avg Questions Display */}
           <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Avg Questions/Day:</span>
-              <div className="flex gap-2">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">All-time Avg:</span>
                 <span className="font-semibold text-chart-accent">
-                  Week: {calculateAvgQuestions(getFilteredRevisions(), 'week').toFixed(1)}
+                  {getAllTimeAverage().toFixed(1)} questions/day
                 </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Filtered Avg:</span>
                 <span className="font-semibold text-chart-accent">
-                  Month: {calculateAvgQuestions(getFilteredRevisions(), 'month').toFixed(1)}
-                </span>
-                <span className="font-semibold text-chart-accent">
-                  All: {calculateAvgQuestions(revisions, 'all').toFixed(1)}
+                  {getFilteredAverage().toFixed(1)} questions/day
                 </span>
               </div>
             </div>
