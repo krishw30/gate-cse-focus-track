@@ -817,14 +817,15 @@ export const buildDailyAvgChart = (periodData: Array<{ period: string; periodLab
         data: accuracyData,
         borderColor: 'hsl(166, 64%, 48%)',
         backgroundColor: 'hsl(166, 64%, 48%)',
-        borderWidth: 3,
+        borderWidth: 4,
         pointBackgroundColor: 'hsl(166, 64%, 48%)',
         pointBorderColor: 'hsl(0 0% 100%)',
         pointBorderWidth: 2,
-        pointRadius: 5,
+        pointRadius: 6,
         tension: 0.4,
         yAxisID: 'y1',
-        fill: false
+        fill: false,
+        order: 0 // Ensures line is drawn on top
       }
     ]
   };
