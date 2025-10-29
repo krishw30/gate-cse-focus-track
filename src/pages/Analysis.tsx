@@ -16,6 +16,7 @@ import { Bar, Line, Chart } from 'react-chartjs-2';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import DetailsPanel from "@/components/DetailsPanel";
 import WeakTopicsModal from "@/components/WeakTopicsModal";
@@ -119,7 +120,16 @@ const Analysis = () => {
 
   const subjectAnalysis = processSubjectAnalysis(revisions);
   const subjectChart = buildSubjectChart(subjectAnalysis);
-  const weakTopicsBySubject = identifyWeakTopics(revisions);
+  
+  // NLP-based weak topic analysis
+  const topicMap = extractTopicsFromText(revisions);
+  const topicAnalyses = analyzeTopics(topicMap, parseFloat(overallAccuracy));
+  const weakTopics = identifyWeakTopics(topicAnalyses, parseFloat(overallAccuracy));
+  const weakTopicsBySubject: Record<string, typeof topicAnalyses> = {};
+  weakTopics.forEach(topic => {
+    if (!weakTopicsBySubject[topic.subject]) weakTopicsBySubject[topic.subject] = [];
+    weakTopicsBySubject[topic.subject].push(topic);
+  });
   
   // Recalculate progress data whenever timeframe changes
   const progressData = processProgressData(revisions, timeframe);
@@ -223,18 +233,25 @@ const Analysis = () => {
           {/* Smart Weak Topic Insights */}
           <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <CardHeader>
-              <CardTitle className="font-semibold text-foreground">Smart Weak Topic Insights</CardTitle>
+              <CardTitle className="font-semibold text-foreground flex items-center gap-2">
+                🤖 Smart Weak Topic Insights
+                <Badge variant="secondary" className="text-xs">AI-Powered</Badge>
+              </CardTitle>
               <CardDescription>
-                Topics identified as weak areas based on accuracy, consistency, and trends from hashtags in your remarks
+                ML-powered analysis automatically extracts topics from your revision remarks and identifies weak areas based on accuracy, consistency, and learning trends
               </CardDescription>
             </CardHeader>
             <CardContent>
               {Object.keys(weakTopicsBySubject).length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
-                  <div className="mb-4 text-4xl">🔍</div>
-                  <h3 className="text-lg font-medium mb-2">No weak topics detected</h3>
-                  <p className="text-sm">Add hashtags (e.g., #GraphTheory) to your revision remarks to track topic performance.</p>
-                  <p className="text-sm mt-2">Topics with low accuracy, inconsistency, or declining trends will appear here.</p>
+                  <div className="mb-4 text-4xl">🎯</div>
+                  <h3 className="text-lg font-medium mb-2">No weak topics detected yet</h3>
+                  <p className="text-sm">Add detailed remarks to your revision sessions describing what you studied.</p>
+                  <p className="text-sm mt-2">Our AI will automatically analyze your notes to identify topics that need attention.</p>
+                  <div className="mt-4 p-4 bg-muted/50 rounded-lg text-left max-w-md mx-auto">
+                    <p className="text-xs font-medium mb-2">💡 Example remarks:</p>
+                    <p className="text-xs italic">"Practiced graph theory problems focusing on shortest path algorithms and minimum spanning trees"</p>
+                  </div>
                 </div>
               ) : (
                 <Accordion type="single" collapsible className="w-full">

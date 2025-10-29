@@ -1059,20 +1059,143 @@ export interface WeakTopicsBySubject {
   [subject: string]: TopicAnalysis[];
 }
 
-// Parse hashtags from remarks field
-export const parseHashtags = (remarks: string): string[] => {
-  if (!remarks) return [];
+// Extract topics from unstructured text using NLP
+export const extractTopicsFromText = (revisions: RevisionData[]): Map<string, { subject: string; revisions: RevisionData[] }> => {
+  const topicMap = new Map<string, { subject: string; revisions: RevisionData[] }>();
   
-  // Match hashtags (word characters after #, including numbers and underscores)
-  const hashtagRegex = /#(\w+)/g;
-  const matches = remarks.matchAll(hashtagRegex);
-  const hashtags: string[] = [];
+  // Common academic/study stopwords to filter out
+  const stopwords = new Set([
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
+    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
+    'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should',
+    'could', 'may', 'might', 'must', 'can', 'about', 'into', 'through', 'during',
+    'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further',
+    'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'both',
+    'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
+    'only', 'own', 'same', 'so', 'than', 'too', 'very', 'this', 'that', 'these',
+    'those', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you',
+    'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself',
+    'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them',
+    'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'whose',
+    'question', 'questions', 'answer', 'answers', 'studied', 'study', 'revision',
+    'practice', 'test', 'exam', 'got', 'did', 'tried', 'need', 'needs', 'work'
+  ]);
+
+  // Extract all remarks text
+  const allRemarks = revisions
+    .filter(r => r.remarks && r.remarks.trim().length > 0)
+    .map(r => ({ text: r.remarks!, revision: r }));
+
+  // Term frequency calculation across all documents
+  const termFrequency = new Map<string, number>();
+  const documentFrequency = new Map<string, number>();
+  const termToRevisions = new Map<string, Set<RevisionData>>();
+
+  // Process each remark
+  allRemarks.forEach(({ text, revision }) => {
+    // Extract meaningful terms (2-3 word phrases and single important words)
+    const terms = extractMeaningfulTerms(text, stopwords);
+    const uniqueTermsInDoc = new Set(terms);
+
+    terms.forEach(term => {
+      // Update term frequency
+      termFrequency.set(term, (termFrequency.get(term) || 0) + 1);
+      
+      // Track revisions for each term
+      if (!termToRevisions.has(term)) {
+        termToRevisions.set(term, new Set());
+      }
+      termToRevisions.get(term)!.add(revision);
+    });
+
+    // Update document frequency
+    uniqueTermsInDoc.forEach(term => {
+      documentFrequency.set(term, (documentFrequency.get(term) || 0) + 1);
+    });
+  });
+
+  // Calculate TF-IDF scores and identify significant topics
+  const totalDocs = allRemarks.length;
+  const tfidfScores = new Map<string, number>();
+
+  termFrequency.forEach((tf, term) => {
+    const df = documentFrequency.get(term) || 1;
+    const idf = Math.log(totalDocs / df);
+    const tfidf = tf * idf;
+    tfidfScores.set(term, tfidf);
+  });
+
+  // Filter and normalize topics - keep only significant terms
+  const sortedTopics = Array.from(tfidfScores.entries())
+    .filter(([term, score]) => {
+      const df = documentFrequency.get(term) || 0;
+      const tf = termFrequency.get(term) || 0;
+      // Keep terms that appear in at least 2 revisions OR appear multiple times
+      return (df >= 2 || tf >= 3) && term.length >= 3;
+    })
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 30); // Keep top 30 topics
+
+  // Build topic map
+  sortedTopics.forEach(([term]) => {
+    const revisionSet = termToRevisions.get(term);
+    if (revisionSet && revisionSet.size > 0) {
+      const revs = Array.from(revisionSet);
+      // Use the most common subject for this topic
+      const subjectCounts = new Map<string, number>();
+      revs.forEach(r => {
+        subjectCounts.set(r.subject, (subjectCounts.get(r.subject) || 0) + 1);
+      });
+      const mostCommonSubject = Array.from(subjectCounts.entries())
+        .sort((a, b) => b[1] - a[1])[0][0];
+
+      topicMap.set(term, {
+        subject: mostCommonSubject,
+        revisions: revs
+      });
+    }
+  });
+
+  return topicMap;
+};
+
+// Extract meaningful terms from text
+const extractMeaningfulTerms = (text: string, stopwords: Set<string>): string[] => {
+  const terms: string[] = [];
   
-  for (const match of matches) {
-    hashtags.push(match[1]);
+  // Normalize text
+  const normalized = text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const words = normalized.split(' ').filter(w => w.length > 2);
+
+  // Extract 2-3 word phrases
+  for (let i = 0; i < words.length; i++) {
+    // 2-word phrases
+    if (i < words.length - 1) {
+      const phrase = `${words[i]} ${words[i + 1]}`;
+      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1])) {
+        terms.push(phrase);
+      }
+    }
+    
+    // 3-word phrases
+    if (i < words.length - 2) {
+      const phrase = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
+      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1]) && !stopwords.has(words[i + 2])) {
+        terms.push(phrase);
+      }
+    }
+
+    // Single meaningful words
+    if (!stopwords.has(words[i]) && words[i].length >= 4) {
+      terms.push(words[i]);
+    }
   }
-  
-  return hashtags;
+
+  return terms;
 };
 
 // Analyze all topics from revisions

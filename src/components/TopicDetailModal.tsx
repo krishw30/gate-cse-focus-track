@@ -12,9 +12,9 @@ interface TopicDetailModalProps {
 }
 
 const TopicDetailModal = ({ isOpen, onClose, topic, revisions }: TopicDetailModalProps) => {
-  // Filter revisions that contain this topic hashtag
+  // Filter revisions that contain this topic (exact phrase match)
   const topicRevisions = revisions.filter(rev => 
-    rev.remarks?.toLowerCase().includes(`#${topic.toLowerCase()}`)
+    rev.remarks?.toLowerCase().includes(topic.toLowerCase())
   );
 
   // Sort by date, most recent first
@@ -26,9 +26,9 @@ const TopicDetailModal = ({ isOpen, onClose, topic, revisions }: TopicDetailModa
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">#{topic}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold capitalize">{topic}</DialogTitle>
           <DialogDescription>
-            All revision sessions tagged with this topic ({sortedRevisions.length} sessions)
+            All revision sessions related to this topic ({sortedRevisions.length} sessions)
           </DialogDescription>
         </DialogHeader>
 
