@@ -1041,29 +1041,99 @@ export const generateInsights = (revisions: RevisionData[]) => {
   return insights.slice(0, 4); // Return max 4 insights
 };
 
-// Smart Weak Topic Analysis Types
+// Smart Weak Topic Analysis Types with ML-enhanced insights
 export interface TopicAnalysis {
   topic: string;
   subject: string;
-  attempts: number;
-  totalQuestions: number;
-  totalCorrect: number;
-  accuracy: number;
-  consistencyScore: number; // 0-100, higher is more consistent
-  trendScore: number; // -1 to 1, negative is declining
-  weaknessScore: number; // Combined score for ranking
-  revisionDates: string[];
+  totalSessions: number;
+  averageAccuracy: number;
+  accuracyStdDev: number;
+  trend: 'improving' | 'declining' | 'stable';
+  consistencyScore: number;
+  weaknessScore: number;
+  concernLevel: 'high' | 'medium' | 'low';
+  insights: string[];
+  revisions: RevisionData[];
 }
 
 export interface WeakTopicsBySubject {
   [subject: string]: TopicAnalysis[];
 }
 
+// Analyze topics with ML-enhanced insights  
+export const analyzeTopics = (
+  topicMap: Map<string, { subject: string; revisions: RevisionData[] }>,
+  overallAverage: number
+): TopicAnalysis[] => {
+  const analyses: TopicAnalysis[] = [];
+
+  topicMap.forEach((data, topic) => {
+    const { subject, revisions } = data;
+    
+    if (revisions.length < 2) return;
+
+    const accuracies = revisions.map(r => 
+      r.numQuestions > 0 ? (r.numCorrect / r.numQuestions) * 100 : 0
+    );
+    const avgAccuracy = accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length;
+
+    const variance = accuracies.reduce((sum, acc) => sum + Math.pow(acc - avgAccuracy, 2), 0) / accuracies.length;
+    const stdDev = Math.sqrt(variance);
+    const consistencyScore = Math.max(0, 100 - stdDev);
+
+    const sortedRevs = [...revisions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const midPoint = Math.floor(sortedRevs.length / 2);
+    const firstHalf = sortedRevs.slice(0, midPoint);
+    const secondHalf = sortedRevs.slice(midPoint);
+
+    const firstHalfAvg = firstHalf.reduce((sum, r) => sum + (r.numQuestions > 0 ? (r.numCorrect / r.numQuestions) * 100 : 0), 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((sum, r) => sum + (r.numQuestions > 0 ? (r.numCorrect / r.numQuestions) * 100 : 0), 0) / secondHalf.length;
+
+    const trendDiff = secondHalfAvg - firstHalfAvg;
+    let trend: 'improving' | 'declining' | 'stable';
+    if (trendDiff > 5) trend = 'improving';
+    else if (trendDiff < -5) trend = 'declining';
+    else trend = 'stable';
+
+    const accuracyGap = Math.max(0, overallAverage - avgAccuracy);
+    const accuracyComponent = (accuracyGap / overallAverage) * 40;
+    const inconsistencyComponent = (stdDev / 50) * 30;
+    const trendComponent = trend === 'declining' ? 20 : (trend === 'stable' ? 10 : 0);
+    const frequencyComponent = Math.min(10, (revisions.length / 5) * 10);
+    const weaknessScore = Math.min(100, accuracyComponent + inconsistencyComponent + trendComponent + frequencyComponent);
+
+    let concernLevel: 'high' | 'medium' | 'low';
+    if (weaknessScore > 60) concernLevel = 'high';
+    else if (weaknessScore > 35) concernLevel = 'medium';
+    else concernLevel = 'low';
+
+    const insights: string[] = [];
+    if (avgAccuracy < overallAverage * 0.7) insights.push(`Significantly below average (${(overallAverage - avgAccuracy).toFixed(1)}% gap)`);
+    else if (avgAccuracy < overallAverage * 0.85) insights.push(`Below your typical performance`);
+    if (stdDev > 20) insights.push(`High variability in scores (±${stdDev.toFixed(1)}%)`);
+    else if (stdDev > 15) insights.push(`Inconsistent performance across sessions`);
+    if (trend === 'declining') insights.push(`Performance declining over time (-${Math.abs(trendDiff).toFixed(1)}%)`);
+    else if (trend === 'stable' && avgAccuracy < overallAverage) insights.push(`No improvement despite practice`);
+    if (revisions.length >= 5) insights.push(`Frequently encountered (${revisions.length} sessions)`);
+    if (avgAccuracy < 50) insights.push(`Critical: Success rate below 50%`);
+    else if (avgAccuracy < 70) insights.push(`Needs focused attention and practice`);
+
+    analyses.push({ topic, subject, totalSessions: revisions.length, averageAccuracy: avgAccuracy, accuracyStdDev: stdDev, trend, consistencyScore, weaknessScore, concernLevel, insights, revisions });
+  });
+
+  return analyses;
+};
+
+// Identify weak topics using ML-enhanced analysis
+export const identifyWeakTopics = (analyses: TopicAnalysis[]): TopicAnalysis[] => {
+  return analyses.filter(analysis => analysis.concernLevel !== 'low' || analysis.weaknessScore > 35)
+    .sort((a, b) => b.weaknessScore - a.weaknessScore).slice(0, 15);
+};
+
 // Extract topics from unstructured text using NLP
 export const extractTopicsFromText = (revisions: RevisionData[]): Map<string, { subject: string; revisions: RevisionData[] }> => {
   const topicMap = new Map<string, { subject: string; revisions: RevisionData[] }>();
   
-  // Common academic/study stopwords to filter out
   const stopwords = new Set([
     'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
     'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
@@ -1081,272 +1151,71 @@ export const extractTopicsFromText = (revisions: RevisionData[]): Map<string, { 
     'practice', 'test', 'exam', 'got', 'did', 'tried', 'need', 'needs', 'work'
   ]);
 
-  // Extract all remarks text
-  const allRemarks = revisions
-    .filter(r => r.remarks && r.remarks.trim().length > 0)
-    .map(r => ({ text: r.remarks!, revision: r }));
-
-  // Term frequency calculation across all documents
+  const allRemarks = revisions.filter(r => r.remarks && r.remarks.trim().length > 0).map(r => ({ text: r.remarks!, revision: r }));
   const termFrequency = new Map<string, number>();
   const documentFrequency = new Map<string, number>();
   const termToRevisions = new Map<string, Set<RevisionData>>();
 
-  // Process each remark
   allRemarks.forEach(({ text, revision }) => {
-    // Extract meaningful terms (2-3 word phrases and single important words)
     const terms = extractMeaningfulTerms(text, stopwords);
     const uniqueTermsInDoc = new Set(terms);
-
     terms.forEach(term => {
-      // Update term frequency
       termFrequency.set(term, (termFrequency.get(term) || 0) + 1);
-      
-      // Track revisions for each term
-      if (!termToRevisions.has(term)) {
-        termToRevisions.set(term, new Set());
-      }
+      if (!termToRevisions.has(term)) termToRevisions.set(term, new Set());
       termToRevisions.get(term)!.add(revision);
     });
-
-    // Update document frequency
     uniqueTermsInDoc.forEach(term => {
       documentFrequency.set(term, (documentFrequency.get(term) || 0) + 1);
     });
   });
 
-  // Calculate TF-IDF scores and identify significant topics
   const totalDocs = allRemarks.length;
   const tfidfScores = new Map<string, number>();
-
   termFrequency.forEach((tf, term) => {
     const df = documentFrequency.get(term) || 1;
     const idf = Math.log(totalDocs / df);
-    const tfidf = tf * idf;
-    tfidfScores.set(term, tfidf);
+    tfidfScores.set(term, tf * idf);
   });
 
-  // Filter and normalize topics - keep only significant terms
   const sortedTopics = Array.from(tfidfScores.entries())
-    .filter(([term, score]) => {
+    .filter(([term]) => {
       const df = documentFrequency.get(term) || 0;
       const tf = termFrequency.get(term) || 0;
-      // Keep terms that appear in at least 2 revisions OR appear multiple times
       return (df >= 2 || tf >= 3) && term.length >= 3;
     })
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 30); // Keep top 30 topics
+    .slice(0, 30);
 
-  // Build topic map
   sortedTopics.forEach(([term]) => {
     const revisionSet = termToRevisions.get(term);
     if (revisionSet && revisionSet.size > 0) {
       const revs = Array.from(revisionSet);
-      // Use the most common subject for this topic
       const subjectCounts = new Map<string, number>();
-      revs.forEach(r => {
-        subjectCounts.set(r.subject, (subjectCounts.get(r.subject) || 0) + 1);
-      });
-      const mostCommonSubject = Array.from(subjectCounts.entries())
-        .sort((a, b) => b[1] - a[1])[0][0];
-
-      topicMap.set(term, {
-        subject: mostCommonSubject,
-        revisions: revs
-      });
+      revs.forEach(r => subjectCounts.set(r.subject, (subjectCounts.get(r.subject) || 0) + 1));
+      const mostCommonSubject = Array.from(subjectCounts.entries()).sort((a, b) => b[1] - a[1])[0][0];
+      topicMap.set(term, { subject: mostCommonSubject, revisions: revs });
     }
   });
 
   return topicMap;
 };
 
-// Extract meaningful terms from text
 const extractMeaningfulTerms = (text: string, stopwords: Set<string>): string[] => {
   const terms: string[] = [];
-  
-  // Normalize text
-  const normalized = text.toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
+  const normalized = text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
   const words = normalized.split(' ').filter(w => w.length > 2);
 
-  // Extract 2-3 word phrases
   for (let i = 0; i < words.length; i++) {
-    // 2-word phrases
     if (i < words.length - 1) {
       const phrase = `${words[i]} ${words[i + 1]}`;
-      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1])) {
-        terms.push(phrase);
-      }
+      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1])) terms.push(phrase);
     }
-    
-    // 3-word phrases
     if (i < words.length - 2) {
       const phrase = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
-      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1]) && !stopwords.has(words[i + 2])) {
-        terms.push(phrase);
-      }
+      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1]) && !stopwords.has(words[i + 2])) terms.push(phrase);
     }
-
-    // Single meaningful words
-    if (!stopwords.has(words[i]) && words[i].length >= 4) {
-      terms.push(words[i]);
-    }
+    if (!stopwords.has(words[i]) && words[i].length >= 4) terms.push(words[i]);
   }
 
   return terms;
-};
-
-// Analyze all topics from revisions
-export const analyzeTopics = (revisions: RevisionData[]): Map<string, TopicAnalysis> => {
-  const topicMap = new Map<string, {
-    subject: string;
-    attempts: number;
-    totalQuestions: number;
-    totalCorrect: number;
-    accuracies: number[];
-    revisionDates: string[];
-  }>();
-
-  // Collect data for each topic
-  revisions.forEach(revision => {
-    const hashtags = parseHashtags(revision.remarks);
-    const accuracy = revision.numQuestions > 0 
-      ? (revision.numCorrect / revision.numQuestions) * 100 
-      : 0;
-
-    hashtags.forEach(tag => {
-      const topicKey = tag.toLowerCase();
-      
-      if (!topicMap.has(topicKey)) {
-        topicMap.set(topicKey, {
-          subject: revision.subject,
-          attempts: 0,
-          totalQuestions: 0,
-          totalCorrect: 0,
-          accuracies: [],
-          revisionDates: []
-        });
-      }
-
-      const topicData = topicMap.get(topicKey)!;
-      topicData.attempts++;
-      topicData.totalQuestions += revision.numQuestions;
-      topicData.totalCorrect += revision.numCorrect;
-      topicData.accuracies.push(accuracy);
-      topicData.revisionDates.push(revision.date);
-    });
-  });
-
-  // Calculate analysis metrics
-  const analyzedTopics = new Map<string, TopicAnalysis>();
-
-  topicMap.forEach((data, topicKey) => {
-    const avgAccuracy = data.totalQuestions > 0 
-      ? (data.totalCorrect / data.totalQuestions) * 100 
-      : 0;
-
-    // Calculate consistency score (lower variance = higher consistency)
-    let consistencyScore = 100;
-    if (data.accuracies.length > 1) {
-      const mean = avgAccuracy;
-      const variance = data.accuracies.reduce((sum, acc) => 
-        sum + Math.pow(acc - mean, 2), 0) / data.accuracies.length;
-      const stdDev = Math.sqrt(variance);
-      // Convert to 0-100 scale (lower stdDev = higher consistency)
-      consistencyScore = Math.max(0, 100 - stdDev);
-    }
-
-    // Calculate trend score (comparing first half vs second half)
-    let trendScore = 0;
-    if (data.accuracies.length >= 4) {
-      const halfPoint = Math.floor(data.accuracies.length / 2);
-      const firstHalf = data.accuracies.slice(0, halfPoint);
-      const secondHalf = data.accuracies.slice(halfPoint);
-      
-      const firstAvg = firstHalf.reduce((sum, acc) => sum + acc, 0) / firstHalf.length;
-      const secondAvg = secondHalf.reduce((sum, acc) => sum + acc, 0) / secondHalf.length;
-      
-      // Normalize to -1 to 1 range
-      trendScore = (secondAvg - firstAvg) / 100;
-    }
-
-    analyzedTopics.set(topicKey, {
-      topic: topicKey,
-      subject: data.subject,
-      attempts: data.attempts,
-      totalQuestions: data.totalQuestions,
-      totalCorrect: data.totalCorrect,
-      accuracy: avgAccuracy,
-      consistencyScore,
-      trendScore,
-      weaknessScore: 0, // Will be calculated after we know overall average
-      revisionDates: data.revisionDates
-    });
-  });
-
-  return analyzedTopics;
-};
-
-// Identify weak topics based on intelligent analysis
-export const identifyWeakTopics = (
-  revisions: RevisionData[],
-  minAttempts: number = 2
-): WeakTopicsBySubject => {
-  // Calculate overall average accuracy
-  const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
-  const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
-  const overallAccuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
-
-  // Analyze all topics
-  const topicAnalysis = analyzeTopics(revisions);
-
-  // Filter and score weak topics
-  const weakTopics: TopicAnalysis[] = [];
-
-  topicAnalysis.forEach(topic => {
-    // Only consider topics with minimum attempts
-    if (topic.attempts < minAttempts) return;
-
-    // Calculate weakness score based on multiple factors
-    let weaknessScore = 0;
-
-    // Factor 1: Accuracy relative to overall (0-50 points)
-    // Lower accuracy = higher score
-    const accuracyDiff = overallAccuracy - topic.accuracy;
-    if (accuracyDiff > 0) {
-      weaknessScore += Math.min(50, accuracyDiff * 2);
-    }
-
-    // Factor 2: Inconsistency (0-25 points)
-    // Lower consistency = higher score
-    weaknessScore += (100 - topic.consistencyScore) * 0.25;
-
-    // Factor 3: Negative trend (0-25 points)
-    // Declining performance = higher score
-    if (topic.trendScore < 0) {
-      weaknessScore += Math.abs(topic.trendScore) * 25;
-    }
-
-    // Only include topics with significant weakness (threshold: 20)
-    if (weaknessScore >= 20) {
-      topic.weaknessScore = weaknessScore;
-      weakTopics.push(topic);
-    }
-  });
-
-  // Sort by weakness score (highest first)
-  weakTopics.sort((a, b) => b.weaknessScore - a.weaknessScore);
-
-  // Group by subject
-  const groupedBySubject: WeakTopicsBySubject = {};
-  weakTopics.forEach(topic => {
-    if (!groupedBySubject[topic.subject]) {
-      groupedBySubject[topic.subject] = [];
-    }
-    groupedBySubject[topic.subject].push(topic);
-  });
-
-  return groupedBySubject;
 };

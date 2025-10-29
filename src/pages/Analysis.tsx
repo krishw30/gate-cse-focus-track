@@ -36,7 +36,10 @@ import {
   processDailyAvgData,
   buildDailyAvgChart,
   generateInsights,
+  extractTopicsFromText,
+  analyzeTopics,
   identifyWeakTopics,
+  type TopicAnalysis,
 } from "@/lib/chartUtils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import TopicDetailModal from "@/components/TopicDetailModal";
@@ -121,10 +124,15 @@ const Analysis = () => {
   const subjectAnalysis = processSubjectAnalysis(revisions);
   const subjectChart = buildSubjectChart(subjectAnalysis);
   
+  const totalRevisions = revisions.length;
+  const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
+  const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
+  const overallAccuracy = totalQuestions > 0 ? ((totalCorrect / totalQuestions) * 100).toFixed(1) : '0';
+  
   // NLP-based weak topic analysis
   const topicMap = extractTopicsFromText(revisions);
   const topicAnalyses = analyzeTopics(topicMap, parseFloat(overallAccuracy));
-  const weakTopics = identifyWeakTopics(topicAnalyses, parseFloat(overallAccuracy));
+  const weakTopics = identifyWeakTopics(topicAnalyses);
   const weakTopicsBySubject: Record<string, typeof topicAnalyses> = {};
   weakTopics.forEach(topic => {
     if (!weakTopicsBySubject[topic.subject]) weakTopicsBySubject[topic.subject] = [];
@@ -141,10 +149,6 @@ const Analysis = () => {
   const timeAnalysis = processTimeAnalysis(revisions);
   const timeChart = buildTimeChart(timeAnalysis);
 
-  const totalRevisions = revisions.length;
-  const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
-  const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
-  const overallAccuracy = totalQuestions > 0 ? ((totalCorrect / totalQuestions) * 100).toFixed(1) : '0';
   const avgQuestionsPerDay = calculateAvgQuestions(revisions, 'all');
   
   // Calculate daily avg data and insights
@@ -257,54 +261,90 @@ const Analysis = () => {
                 <Accordion type="single" collapsible className="w-full">
                   {Object.entries(weakTopicsBySubject).map(([subject, topics]) => (
                     <AccordionItem key={subject} value={subject}>
-                      <AccordionTrigger className="text-lg font-medium hover:no-underline">
+                      <AccordionTrigger className="hover:no-underline">
                         <div className="flex items-center justify-between w-full pr-4">
-                          <span>{subject}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {topics.length} weak {topics.length === 1 ? 'topic' : 'topics'}
-                          </span>
+                          <span className="font-medium text-left">{subject}</span>
+                          <div className="flex gap-2">
+                            <Badge variant="destructive" className="text-xs">
+                              {topics.filter(t => t.concernLevel === 'high').length} high
+                            </Badge>
+                            <Badge variant="secondary">{topics.length} topics</Badge>
+                          </div>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-3 pt-2">
-                          {topics.map((topic) => (
-                            <div
-                              key={topic.topic}
-                              className="p-4 bg-muted/30 rounded-lg border border-muted hover:bg-muted/50 hover:border-muted-foreground/20 transition-all cursor-pointer"
-                              onClick={() => handleTopicClick(topic.topic)}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                  <h4 className="font-medium text-base mb-2">
-                                    #{topic.topic}
-                                  </h4>
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                                    <div>
-                                      <span className="text-muted-foreground">Accuracy: </span>
-                                      <span className="font-medium">{topic.accuracy.toFixed(1)}%</span>
+                          {topics.map((topic) => {
+                            const trendIcon = topic.trend === 'improving' ? '📈' : 
+                                            topic.trend === 'declining' ? '📉' : '➡️';
+                            const concernColor = topic.concernLevel === 'high' ? 'destructive' : 
+                                               topic.concernLevel === 'medium' ? 'default' : 'secondary';
+                            
+                            return (
+                              <div
+                                key={topic.topic}
+                                className="p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-all cursor-pointer border-l-4"
+                                style={{
+                                  borderLeftColor: topic.concernLevel === 'high' ? 'hsl(var(--destructive))' :
+                                                  topic.concernLevel === 'medium' ? 'hsl(var(--warning))' :
+                                                  'hsl(var(--muted-foreground))'
+                                }}
+                                onClick={() => handleTopicClick(topic.topic)}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                      <span className="font-medium text-base capitalize">{topic.topic}</span>
+                                      <Badge variant={concernColor} className="text-xs">
+                                        {topic.concernLevel} concern
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs">
+                                        {topic.totalSessions} sessions
+                                      </Badge>
                                     </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Attempts: </span>
-                                      <span className="font-medium">{topic.attempts}</span>
+                                    
+                                    <div className="grid grid-cols-4 gap-3 mb-3">
+                                      <div>
+                                        <div className="text-xs text-muted-foreground">Accuracy</div>
+                                        <div className="text-sm font-medium text-destructive">
+                                          {topic.averageAccuracy.toFixed(1)}%
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-muted-foreground">Consistency</div>
+                                        <div className="text-sm font-medium">
+                                          {topic.consistencyScore.toFixed(0)}%
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-muted-foreground">Trend</div>
+                                        <div className="text-sm font-medium">
+                                          {trendIcon} {topic.trend}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-muted-foreground">Weakness</div>
+                                        <div className="text-sm font-medium">
+                                          {topic.weaknessScore.toFixed(0)}/100
+                                        </div>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Consistency: </span>
-                                      <span className="font-medium">{topic.consistencyScore.toFixed(0)}/100</span>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Trend: </span>
-                                      <span className={`font-medium ${topic.trendScore < 0 ? 'text-destructive' : 'text-chart-accent'}`}>
-                                        {topic.trendScore < 0 ? '↓ Declining' : topic.trendScore > 0 ? '↑ Improving' : '→ Stable'}
-                                      </span>
-                                    </div>
+
+                                    {topic.insights.length > 0 && (
+                                      <div className="space-y-1">
+                                        {topic.insights.map((insight, idx) => (
+                                          <div key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                            <span className="text-primary">•</span>
+                                            <span>{insight}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                  <p className="text-xs text-muted-foreground mt-2">
-                                    Click to view all revision sessions for this topic
-                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </AccordionContent>
                     </AccordionItem>
