@@ -35,7 +35,10 @@ import {
   processDailyAvgData,
   buildDailyAvgChart,
   generateInsights,
+  identifyWeakTopics,
 } from "@/lib/chartUtils";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import TopicDetailModal from "@/components/TopicDetailModal";
 
 ChartJS.register(
   CategoryScale,
@@ -53,7 +56,14 @@ const Analysis = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [avgTimeframe, setAvgTimeframe] = useState<'weekly' | 'monthly'>('weekly');
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   const { toast } = useToast();
+
+  const handleTopicClick = (topic: string) => {
+    setSelectedTopic(topic);
+    setIsTopicModalOpen(true);
+  };
 
   useEffect(() => {
     const fetchRevisions = async () => {
@@ -109,6 +119,7 @@ const Analysis = () => {
 
   const subjectAnalysis = processSubjectAnalysis(revisions);
   const subjectChart = buildSubjectChart(subjectAnalysis);
+  const weakTopicsBySubject = identifyWeakTopics(revisions);
   
   // Recalculate progress data whenever timeframe changes
   const progressData = processProgressData(revisions, timeframe);
@@ -208,6 +219,76 @@ const Analysis = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Smart Weak Topic Insights */}
+          {Object.keys(weakTopicsBySubject).length > 0 && (
+            <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <CardHeader>
+                <CardTitle className="font-semibold text-foreground">Smart Weak Topic Insights</CardTitle>
+                <CardDescription>
+                  Topics identified as weak areas based on accuracy, consistency, and trends
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Accordion type="single" collapsible className="w-full">
+                  {Object.entries(weakTopicsBySubject).map(([subject, topics]) => (
+                    <AccordionItem key={subject} value={subject}>
+                      <AccordionTrigger className="text-lg font-medium hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span>{subject}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {topics.length} weak {topics.length === 1 ? 'topic' : 'topics'}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-3 pt-2">
+                          {topics.map((topic) => (
+                            <div
+                              key={topic.topic}
+                              className="p-4 bg-muted/30 rounded-lg border border-muted hover:bg-muted/50 hover:border-muted-foreground/20 transition-all cursor-pointer"
+                              onClick={() => handleTopicClick(topic.topic)}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-base mb-2">
+                                    #{topic.topic}
+                                  </h4>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">Accuracy: </span>
+                                      <span className="font-medium">{topic.accuracy.toFixed(1)}%</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Attempts: </span>
+                                      <span className="font-medium">{topic.attempts}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Consistency: </span>
+                                      <span className="font-medium">{topic.consistencyScore.toFixed(0)}/100</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Trend: </span>
+                                      <span className={`font-medium ${topic.trendScore < 0 ? 'text-destructive' : 'text-chart-accent'}`}>
+                                        {topic.trendScore < 0 ? '↓ Declining' : topic.trendScore > 0 ? '↑ Improving' : '→ Stable'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    Click to view all revision sessions for this topic
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="types" className="space-y-6">
@@ -383,6 +464,16 @@ const Analysis = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Topic Detail Modal */}
+      {selectedTopic && (
+        <TopicDetailModal
+          isOpen={isTopicModalOpen}
+          onClose={() => setIsTopicModalOpen(false)}
+          topic={selectedTopic}
+          revisions={revisions}
+        />
+      )}
     </div>
   );
 };
