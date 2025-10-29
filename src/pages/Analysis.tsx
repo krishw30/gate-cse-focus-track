@@ -221,15 +221,22 @@ const Analysis = () => {
           </Card>
 
           {/* Smart Weak Topic Insights */}
-          {Object.keys(weakTopicsBySubject).length > 0 && (
-            <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <CardHeader>
-                <CardTitle className="font-semibold text-foreground">Smart Weak Topic Insights</CardTitle>
-                <CardDescription>
-                  Topics identified as weak areas based on accuracy, consistency, and trends
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <CardHeader>
+              <CardTitle className="font-semibold text-foreground">Smart Weak Topic Insights</CardTitle>
+              <CardDescription>
+                Topics identified as weak areas based on accuracy, consistency, and trends from hashtags in your remarks
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {Object.keys(weakTopicsBySubject).length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <div className="mb-4 text-4xl">🔍</div>
+                  <h3 className="text-lg font-medium mb-2">No weak topics detected</h3>
+                  <p className="text-sm">Add hashtags (e.g., #GraphTheory) to your revision remarks to track topic performance.</p>
+                  <p className="text-sm mt-2">Topics with low accuracy, inconsistency, or declining trends will appear here.</p>
+                </div>
+              ) : (
                 <Accordion type="single" collapsible className="w-full">
                   {Object.entries(weakTopicsBySubject).map(([subject, topics]) => (
                     <AccordionItem key={subject} value={subject}>
@@ -286,9 +293,9 @@ const Analysis = () => {
                     </AccordionItem>
                   ))}
                 </Accordion>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="types" className="space-y-6">
