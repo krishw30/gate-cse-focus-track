@@ -84,9 +84,9 @@ ${JSON.stringify(dataSummary, null, 2)}
 
 Based on this data, please answer the following question: ${userMessage}`;
 
-      // Call Gemini API
+      // Call Gemini API with correct model name
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: {
@@ -96,8 +96,7 @@ Based on this data, please answer the following question: ${userMessage}`;
             contents: [
               {
                 parts: [
-                  { text: systemMessage },
-                  { text: contextPrompt }
+                  { text: `${systemMessage}\n\n${contextPrompt}` }
                 ]
               }
             ],
@@ -110,7 +109,9 @@ Based on this data, please answer the following question: ${userMessage}`;
       );
 
       if (!response.ok) {
-        throw new Error("Failed to get response from AI");
+        const errorData = await response.json().catch(() => ({ error: { message: "Unknown error" } }));
+        console.error("Gemini API Error:", errorData);
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
       }
 
       const data = await response.json();
