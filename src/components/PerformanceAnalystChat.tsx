@@ -1,15 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect } from "react";
+import ChatBot from "react-chatbotify";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User } from "lucide-react";
+import { Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
 
 interface PerformanceData {
   totalRevisions: number;
@@ -36,109 +29,117 @@ interface Props {
 const GEMINI_API_KEY = "AIzaSyCEeS50KOonYdd0TalKulImhM4jKd4SFQ8";
 
 export default function PerformanceAnalystChat({ performanceData }: Props) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content: "Hi! I'm your AI Performance Analyst. I can help you understand your GATE CSE preparation progress based on your actual revision data. Ask me anything about your performance, weak areas, or study strategy!"
-    }
-  ]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
+  const flow = {
+    start: {
+      message: "Hi! I'm your AI Performance Analyst. I can help you understand your GATE CSE preparation progress. Ask me anything!",
+      path: "process_question"
+    },
+    process_question: {
+      message: async (params: any) => {
+        try {
+          const userMessage = params.userInput;
+          
+          // Create a concise summary instead of full data dump
+          const summary = {
+            overview: {
+              revisions: performanceData.totalRevisions,
+              questions: performanceData.totalQuestions,
+              accuracy: performanceData.overallAccuracy + "%",
+              avgPerDay: Math.round(performanceData.avgQuestionsPerDay)
+            },
+            subjects: Object.entries(performanceData.subjectAnalysis).map(([name, data]) => ({
+              name,
+              accuracy: Math.round(data.accuracy) + "%",
+              questions: data.totalQuestions
+            })),
+            weakTopics: performanceData.weakTopics.slice(0, 5).map(t => ({
+              topic: t.topic,
+              subject: t.subject,
+              accuracy: Math.round(t.averageAccuracy) + "%",
+              concern: t.concernLevel
+            }))
+          };
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+          const systemPrompt = "You are a GATE CSE performance analyst. Provide concise, actionable insights based on student data. Keep responses under 150 words.";
+          
+          const prompt = `${systemPrompt}\n\nStudent Data: ${JSON.stringify(summary)}\n\nQuestion: ${userMessage}\n\nProvide a brief, helpful response:`;
 
-    const userMessage = input.trim();
-    setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMessage }]);
-    setIsLoading(true);
-
-    try {
-      // Prepare the performance data summary
-      const dataSummary = {
-        summary: {
-          totalRevisions: performanceData.totalRevisions,
-          totalQuestions: performanceData.totalQuestions,
-          overallAccuracy: performanceData.overallAccuracy,
-          avgQuestionsPerDay: performanceData.avgQuestionsPerDay
-        },
-        subjectWisePerformance: performanceData.subjectAnalysis,
-        typeWisePerformance: performanceData.typeAnalysis,
-        weakTopics: performanceData.weakTopics
-      };
-
-      // Construct the prompt with system message, data, and user question
-      const systemMessage = "You are a helpful GATE CSE performance analyst. You analyze student performance data and provide personalized insights, recommendations, and study strategies. Always base your responses on the provided performance data. Be encouraging but honest about areas that need improvement.";
-      
-      const contextPrompt = `Here is the student's performance data:
-
-${JSON.stringify(dataSummary, null, 2)}
-
-Based on this data, please answer the following question: ${userMessage}`;
-
-      // Call Gemini API with correct model name
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  { text: `${systemMessage}\n\n${contextPrompt}` }
-                ]
-              }
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 1024,
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 2048,
+                }
+              })
             }
-          })
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Gemini API Error:", response.status, errorText);
+            throw new Error(`API Error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log("Gemini Response:", data);
+          
+          // Handle different response structures
+          let aiResponse = "I apologize, but I couldn't generate a response. Please try again.";
+          
+          if (data.candidates && data.candidates.length > 0) {
+            const candidate = data.candidates[0];
+            
+            if (candidate.content?.parts?.[0]?.text) {
+              aiResponse = candidate.content.parts[0].text;
+            } else if (candidate.finishReason === "MAX_TOKENS") {
+              aiResponse = "Response was too long. Please ask a more specific question about your performance.";
+            } else if (candidate.finishReason === "SAFETY") {
+              aiResponse = "I couldn't process that question. Please rephrase it.";
+            }
+          }
+
+          return aiResponse;
+        } catch (error) {
+          console.error("Chat error:", error);
+          toast({
+            title: "Error",
+            description: "Failed to get AI response. Please try again.",
+            variant: "destructive"
+          });
+          return "Sorry, I encountered an error. Please try asking again.";
         }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: { message: "Unknown error" } }));
-        console.error("Gemini API Error:", errorData);
-        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I apologize, but I couldn't generate a response. Please try again.";
-
-      setMessages(prev => [...prev, { role: "assistant", content: aiResponse }]);
-    } catch (error) {
-      console.error("Error calling Gemini API:", error);
-      toast({
-        title: "Error",
-        description: "Failed to get AI response. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      },
+      path: "process_question"
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+  const settings = {
+    general: {
+      embedded: true,
+      primaryColor: "#6366f1",
+      secondaryColor: "#8b5cf6",
+    },
+    chatHistory: {
+      storageKey: "performance_analyst_history"
+    },
+    header: {
+      title: "AI Performance Analyst",
+      showAvatar: true
+    },
+    tooltip: {
+      mode: "NEVER" as const
     }
   };
 
   return (
-    <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 h-[500px] flex flex-col" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+    <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 h-[500px]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
       <CardHeader className="pb-3">
         <CardTitle className="font-semibold text-foreground flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
@@ -148,68 +149,12 @@ Based on this data, please answer the following question: ${userMessage}`;
           Ask me anything about your performance and study strategy
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col p-0 px-6 pb-6 overflow-hidden">
-        <ScrollArea className="flex-1 pr-4 mb-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {message.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-4 w-4 text-primary" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                </div>
-                {message.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                    <User className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Bot className="h-4 w-4 text-primary" />
-                </div>
-                <div className="bg-muted rounded-lg p-3">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                    <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                    <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-        
-        <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask about your performance..."
-            disabled={isLoading}
-            className="flex-1"
+      <CardContent className="h-[calc(100%-88px)]">
+        <div className="h-full">
+          <ChatBot 
+            flow={flow}
+            settings={settings}
           />
-          <Button
-            onClick={sendMessage}
-            disabled={isLoading || !input.trim()}
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
         </div>
       </CardContent>
     </Card>
