@@ -218,36 +218,22 @@ const Analysis = () => {
         </TabsList>
 
         <TabsContent value="subjects" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <CardHeader>
-                <CardTitle className="font-semibold text-foreground">Subject-wise Performance</CardTitle>
-                <CardDescription>
-                  Stacked horizontal bars showing correct vs wrong answers for each subject
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[500px]">
-                  <Bar
-                    data={subjectChart.data}
-                    options={subjectChart.options}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <PerformanceAnalystChat
-              performanceData={{
-                totalRevisions,
-                totalQuestions,
-                overallAccuracy,
-                avgQuestionsPerDay,
-                subjectAnalysis,
-                typeAnalysis,
-                weakTopics
-              }}
-            />
-          </div>
+          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <CardHeader>
+              <CardTitle className="font-semibold text-foreground">Subject-wise Performance</CardTitle>
+              <CardDescription>
+                Stacked horizontal bars showing correct vs wrong answers for each subject
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[500px]">
+                <Bar
+                  data={subjectChart.data}
+                  options={subjectChart.options}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Smart Weak Topic Insights */}
           <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
@@ -553,6 +539,18 @@ const Analysis = () => {
           revisions={revisions}
         />
       )}
+
+      <PerformanceAnalystChat
+        performanceData={{
+          totalRevisions,
+          totalQuestions,
+          overallAccuracy,
+          avgQuestionsPerDay,
+          subjectAnalysis,
+          typeAnalysis,
+          weakTopics
+        }}
+      />
     </div>
   );
 };

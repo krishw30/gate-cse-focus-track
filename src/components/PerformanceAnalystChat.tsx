@@ -1,7 +1,4 @@
-import { useEffect } from "react";
 import ChatBot from "react-chatbotify";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PerformanceData {
@@ -122,7 +119,7 @@ export default function PerformanceAnalystChat({ performanceData }: Props) {
 
   const settings = {
     general: {
-      embedded: true,
+      embedded: false,
       primaryColor: "#6366f1",
       secondaryColor: "#8b5cf6",
     },
@@ -135,28 +132,16 @@ export default function PerformanceAnalystChat({ performanceData }: Props) {
     },
     tooltip: {
       mode: "NEVER" as const
+    },
+    chatButton: {
+      icon: "🤖"
     }
   };
 
   return (
-    <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300 h-[500px]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-      <CardHeader className="pb-3">
-        <CardTitle className="font-semibold text-foreground flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          AI Performance Analyst
-        </CardTitle>
-        <CardDescription>
-          Ask me anything about your performance and study strategy
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="h-[calc(100%-88px)]">
-        <div className="h-full">
-          <ChatBot 
-            flow={flow}
-            settings={settings}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <ChatBot 
+      flow={flow}
+      settings={settings}
+    />
   );
 }
