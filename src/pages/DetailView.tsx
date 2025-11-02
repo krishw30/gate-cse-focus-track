@@ -8,6 +8,7 @@ import { Download, Calendar, BarChart3, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RevisionData, calculateAvgQuestions } from "@/lib/chartUtils";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import DetailViewChat from "@/components/DetailViewChat";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -691,6 +692,8 @@ const DetailView = () => {
           </>
         )}
       </div>
+
+      <DetailViewChat revisions={revisions} />
     </div>
   );
 };
