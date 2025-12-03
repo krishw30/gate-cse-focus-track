@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, BarChart3, PlusCircle } from "lucide-react";
+import { Plus, BarChart3, PlusCircle, Trophy } from "lucide-react"; // Added Trophy icon
 import { Link } from "react-router-dom";
 import AddQuestionModal from "@/components/AddQuestionModal";
 
@@ -10,7 +10,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6"> {/* Increased max-width slightly for 4 cards */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
             GATE CSE Revision Tracker
@@ -20,8 +20,10 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Add Revision Card */}
+        {/* UPDATED GRID LAYOUT: 4 Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          {/* 1. Add Revision Card */}
           <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2">
@@ -41,7 +43,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Add Question Card */}
+          {/* 2. Add Question Card */}
           <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2">
@@ -63,7 +65,27 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Analysis Card */}
+          {/* 3. NEW CARD: Log Mock Test */}
+          <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
+            <CardHeader className="text-center">
+              <CardTitle className="flex items-center justify-center gap-2">
+                <Trophy className="h-6 w-6 text-primary" />
+                Log Mock Test
+              </CardTitle>
+              <CardDescription>
+                Record your full-length mock test scores
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link to="/log-mock-test">
+                <Button className="w-full" size="lg" variant="secondary">
+                  Add Mock Result
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* 4. Analysis Card */}
           <Card className="hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/20">
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2">
@@ -82,6 +104,7 @@ const Index = () => {
               </Link>
             </CardContent>
           </Card>
+
         </div>
 
         {/* Quick Stats Section */}

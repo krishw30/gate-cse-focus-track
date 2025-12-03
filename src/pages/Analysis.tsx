@@ -19,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import DetailsPanel from "@/components/DetailsPanel";
-import WeakTopicsModal from "@/components/WeakTopicsModal";
 import TimeInsightsModal from "@/components/TimeInsightsModal";
 import QuestionsModal from "@/components/QuestionsModal";
 import {
@@ -36,14 +35,8 @@ import {
   processDailyAvgData,
   buildDailyAvgChart,
   generateInsights,
-  extractTopicsFromText,
-  analyzeTopics,
-  identifyWeakTopics,
-  type TopicAnalysis,
+  MockTestData
 } from "@/lib/chartUtils";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import TopicDetailModal from "@/components/TopicDetailModal";
-import PerformanceAnalystChat from "@/components/PerformanceAnalystChat";
 
 ChartJS.register(
   CategoryScale,
@@ -58,30 +51,33 @@ ChartJS.register(
 
 const Analysis = () => {
   const [revisions, setRevisions] = useState<RevisionData[]>([]);
+  const [mockTests, setMockTests] = useState<MockTestData[]>([]);
+  const [includeMocks, setIncludeMocks] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [avgTimeframe, setAvgTimeframe] = useState<'weekly' | 'monthly'>('weekly');
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleTopicClick = (topic: string) => {
-    setSelectedTopic(topic);
-    setIsTopicModalOpen(true);
-  };
-
   useEffect(() => {
-    const fetchRevisions = async () => {
+    const fetchData = async () => {
       try {
-        const q = query(collection(db, "revisions"), orderBy("timestamp", "desc"));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => doc.data() as RevisionData);
-        setRevisions(data);
+        // fetch revisions
+        const qRev = query(collection(db, "revisions"), orderBy("timestamp", "desc"));
+        const revSnap = await getDocs(qRev);
+        const revs = revSnap.docs.map(doc => doc.data() as RevisionData);
+
+        // fetch mock tests
+        const qMock = query(collection(db, "mockTest"), orderBy("timestamp", "desc"));
+        const mockSnap = await getDocs(qMock);
+        const mocks = mockSnap.docs.map(doc => doc.data() as MockTestData);
+
+        setRevisions(revs);
+        setMockTests(mocks);
       } catch (error) {
-        console.error("Error fetching revisions:", error);
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
-          description: "Failed to fetch revision data",
+          description: "Failed to fetch revision or mock test data",
           variant: "destructive"
         });
       } finally {
@@ -89,7 +85,7 @@ const Analysis = () => {
       }
     };
 
-    fetchRevisions();
+    fetchData();
   }, [toast]);
 
   if (isLoading) {
@@ -105,7 +101,7 @@ const Analysis = () => {
     );
   }
 
-  if (revisions.length === 0) {
+  if (revisions.length === 0 && mockTests.length === 0) { // <-- include mockTests in empty check
     return (
       <div className="max-w-6xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6 text-center font-semibold">Analysis Dashboard</h1>
@@ -122,52 +118,91 @@ const Analysis = () => {
     );
   }
 
+  // Keep subject-only analysis (optional: expand mockTests.subjectDetails into per-subject revisions if you want)
   const subjectAnalysis = processSubjectAnalysis(revisions);
   const subjectChart = buildSubjectChart(subjectAnalysis);
-  
-  const totalRevisions = revisions.length;
-  const totalQuestions = revisions.reduce((sum, r) => sum + r.numQuestions, 0);
-  const totalCorrect = revisions.reduce((sum, r) => sum + r.numCorrect, 0);
+
+  // Convert mock tests into RevisionData-like entries for totals/progress/type/daily insights
+  const mockAsRevisions: RevisionData[] = mockTests.map(m => ({
+    date: m.date,
+    subject: "Mock Test",
+    numQuestions: Number(m.totalQuestions || 0),
+    numCorrect: Number(m.totalCorrect || 0),
+    type: "Mock Test",
+    remarks: m.sillyMistakes || "",
+    timeSpentMinutes: undefined
+  }));
+
+  // Combined activities used for totals/progress/type/insights
+  // includeMocks controls whether mock tests are considered in aggregated metrics & charts
+  const combinedActivities = includeMocks ? [...revisions, ...mockAsRevisions] : [...revisions];
+
+  const totalRevisions = combinedActivities.length;
+  const totalQuestions = combinedActivities.reduce((sum, r) => sum + (r.numQuestions || 0), 0);
+  const totalCorrect = combinedActivities.reduce((sum, r) => sum + (r.numCorrect || 0), 0);
   const overallAccuracy = totalQuestions > 0 ? ((totalCorrect / totalQuestions) * 100).toFixed(1) : '0';
-  
-  // NLP-based weak topic analysis
-  const topicMap = extractTopicsFromText(revisions);
-  const topicAnalyses = analyzeTopics(topicMap, parseFloat(overallAccuracy));
-  const weakTopics = identifyWeakTopics(topicAnalyses);
-  const weakTopicsBySubject: Record<string, typeof topicAnalyses> = {};
-  weakTopics.forEach(topic => {
-    if (!weakTopicsBySubject[topic.subject]) weakTopicsBySubject[topic.subject] = [];
-    weakTopicsBySubject[topic.subject].push(topic);
-  });
-  
-  // Recalculate progress data whenever timeframe changes
-  const progressData = processProgressData(revisions, timeframe);
+
+  // Recalculate progress data using combined activities (so mocks are included)
+  const progressData = processProgressData(combinedActivities, timeframe);
   const progressChart = buildProgressChart(progressData);
 
-  const typeAnalysis = processTypeAnalysis(revisions);
+  // Use combined activities for type analysis (includes Mock Test)
+  const typeAnalysis = processTypeAnalysis(combinedActivities);
   const typeChart = buildTypeChart(typeAnalysis);
 
-  const timeAnalysis = processTimeAnalysis(revisions);
+  // Time analysis remains derived from combinedActivities (mock entries have no time by default)
+  const timeAnalysis = processTimeAnalysis(combinedActivities);
   const timeChart = buildTimeChart(timeAnalysis);
 
-  const avgQuestionsPerDay = calculateAvgQuestions(revisions, 'all');
+  const avgQuestionsPerDay = calculateAvgQuestions(combinedActivities, 'all');
   
-  // Calculate daily avg data and insights
-  const dailyAvgData = processDailyAvgData(revisions, avgTimeframe);
+  // Calculate daily avg data and insights using combined activities
+  const dailyAvgData = processDailyAvgData(combinedActivities, avgTimeframe);
   const dailyAvgChart = buildDailyAvgChart(dailyAvgData);
-  const insights = generateInsights(revisions);
+  const insights = generateInsights(combinedActivities);
+
+  // --- NEW: styled accessible ToggleSwitch component ---
+  const ToggleSwitch = ({ checked, onChange, count }: { checked: boolean; onChange: () => void; count?: number }) => {
+    return (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={onChange}
+        className={`inline-flex items-center gap-3 px-3 py-1 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+          checked ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-white shadow-sm' : 'bg-slate-100 text-slate-700'
+        }`}
+      >
+        <span className="relative inline-flex items-center w-12 h-6">
+          <span className={`absolute inset-0 rounded-full transition-colors ${checked ? 'bg-emerald-600' : 'bg-gray-300'}`}></span>
+          <span
+            className={`relative z-10 inline-block w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
+              checked ? 'translate-x-6' : 'translate-x-0'
+            }`}
+            aria-hidden
+          />
+        </span>
+
+        <span className="flex flex-col leading-none text-left">
+          <span className="text-sm font-medium">{checked ? 'Including full-length mocks' : 'Exclude full-length mocks'}</span>
+          <span className="text-[11px] text-muted-foreground">{count ?? 0} mock(s)</span>
+        </span>
+      </button>
+    );
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold font-semibold">Analysis Dashboard</h1>
         <div className="flex gap-3">
-          <WeakTopicsModal />
-          <QuestionsModal />
-          <TimeInsightsModal revisions={revisions} />
-          <DetailsPanel revisions={revisions} />
-        </div>
-      </div>
+          {/* Toggle: include/exclude full-length mock tests from aggregated metrics */}
+          <ToggleSwitch checked={includeMocks} onChange={() => setIncludeMocks(prev => !prev)} count={mockTests.length} />
+           <QuestionsModal />
+           <TimeInsightsModal revisions={revisions} />
+           <DetailsPanel revisions={revisions} />
+         </div>
+       </div>
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -232,126 +267,6 @@ const Analysis = () => {
                   options={subjectChart.options}
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Smart Weak Topic Insights */}
-          <Card className="rounded-xl shadow-md border-0 hover:shadow-lg transition-all duration-300" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <CardHeader>
-              <CardTitle className="font-semibold text-foreground flex items-center gap-2">
-                🤖 Smart Weak Topic Insights
-                <Badge variant="secondary" className="text-xs">AI-Powered</Badge>
-              </CardTitle>
-              <CardDescription>
-                ML-powered analysis automatically extracts topics from your revision remarks and identifies weak areas based on accuracy, consistency, and learning trends
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {Object.keys(weakTopicsBySubject).length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  <div className="mb-4 text-4xl">🎯</div>
-                  <h3 className="text-lg font-medium mb-2">No weak topics detected yet</h3>
-                  <p className="text-sm">Add detailed remarks to your revision sessions describing what you studied.</p>
-                  <p className="text-sm mt-2">Our AI will automatically analyze your notes to identify topics that need attention.</p>
-                  <div className="mt-4 p-4 bg-muted/50 rounded-lg text-left max-w-md mx-auto">
-                    <p className="text-xs font-medium mb-2">💡 Example remarks:</p>
-                    <p className="text-xs italic">"Practiced graph theory problems focusing on shortest path algorithms and minimum spanning trees"</p>
-                  </div>
-                </div>
-              ) : (
-                <Accordion type="single" collapsible className="w-full">
-                  {Object.entries(weakTopicsBySubject).map(([subject, topics]) => (
-                    <AccordionItem key={subject} value={subject}>
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center justify-between w-full pr-4">
-                          <span className="font-medium text-left">{subject}</span>
-                          <div className="flex gap-2">
-                            <Badge variant="destructive" className="text-xs">
-                              {topics.filter(t => t.concernLevel === 'high').length} high
-                            </Badge>
-                            <Badge variant="secondary">{topics.length} topics</Badge>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="space-y-3 pt-2">
-                          {topics.map((topic) => {
-                            const trendIcon = topic.trend === 'improving' ? '📈' : 
-                                            topic.trend === 'declining' ? '📉' : '➡️';
-                            const concernColor = topic.concernLevel === 'high' ? 'destructive' : 
-                                               topic.concernLevel === 'medium' ? 'default' : 'secondary';
-                            
-                            return (
-                              <div
-                                key={topic.topic}
-                                className="p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-all cursor-pointer border-l-4"
-                                style={{
-                                  borderLeftColor: topic.concernLevel === 'high' ? 'hsl(var(--destructive))' :
-                                                  topic.concernLevel === 'medium' ? 'hsl(var(--warning))' :
-                                                  'hsl(var(--muted-foreground))'
-                                }}
-                                onClick={() => handleTopicClick(topic.topic)}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                      <span className="font-medium text-base capitalize">{topic.topic}</span>
-                                      <Badge variant={concernColor} className="text-xs">
-                                        {topic.concernLevel} concern
-                                      </Badge>
-                                      <Badge variant="outline" className="text-xs">
-                                        {topic.totalSessions} sessions
-                                      </Badge>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-4 gap-3 mb-3">
-                                      <div>
-                                        <div className="text-xs text-muted-foreground">Accuracy</div>
-                                        <div className="text-sm font-medium text-destructive">
-                                          {topic.averageAccuracy.toFixed(1)}%
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-muted-foreground">Consistency</div>
-                                        <div className="text-sm font-medium">
-                                          {topic.consistencyScore.toFixed(0)}%
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-muted-foreground">Trend</div>
-                                        <div className="text-sm font-medium">
-                                          {trendIcon} {topic.trend}
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-muted-foreground">Weakness</div>
-                                        <div className="text-sm font-medium">
-                                          {topic.weaknessScore.toFixed(0)}/100
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {topic.insights.length > 0 && (
-                                      <div className="space-y-1">
-                                        {topic.insights.map((insight, idx) => (
-                                          <div key={idx} className="flex items-start gap-2 text-xs text-muted-foreground">
-                                            <span className="text-primary">•</span>
-                                            <span>{insight}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -530,27 +445,7 @@ const Analysis = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Topic Detail Modal */}
-      {selectedTopic && (
-        <TopicDetailModal
-          isOpen={isTopicModalOpen}
-          onClose={() => setIsTopicModalOpen(false)}
-          topic={selectedTopic}
-          revisions={revisions}
-        />
-      )}
-
-      <PerformanceAnalystChat
-        performanceData={{
-          totalRevisions,
-          totalQuestions,
-          overallAccuracy,
-          avgQuestionsPerDay,
-          subjectAnalysis,
-          typeAnalysis,
-          weakTopics
-        }}
-      />
+      {/* Chatbot removed: no AI chat component is rendered here anymore */}
     </div>
   );
 };

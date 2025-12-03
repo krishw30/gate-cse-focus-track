@@ -18,6 +18,42 @@ export interface SubjectAnalysis {
   };
 }
 
+// === ADD THESE NEW INTERFACES ===
+
+export interface SubjectPerformance {
+  subject: string;
+  correct: number;
+  wrong: number;
+  unattempted: number;
+
+  // NEW optional mark fields (some mocks provide marks instead of counts)
+  score?: number;          // net score or gained-lost (float)
+  totalMarks?: number;     // maximum marks for this subject in the mock
+  gainedMarks?: number;    // marks gained (if provided separate from score)
+  lostMarks?: number;      // marks lost (negative portion)
+}
+
+export interface MockTestData {
+  date: string; 
+  provider: string; // e.g., Made Easy, GO Classes
+  testType: 'Topic' | 'Subject' | 'Mixed' | 'FMT';
+  testName: string; 
+  
+  // Score Overview
+  totalScore: number;
+  totalMarks: number;
+  totalQuestions: number;
+  totalCorrect: number;
+  totalIncorrect: number;
+  
+  // Detailed Breakdown
+  subjectDetails: SubjectPerformance[]; 
+  
+  // Analysis
+  sillyMistakes: string;
+}
+
+
 export interface ProgressData {
   date: string;
   totalQuestions: number;
@@ -1041,181 +1077,5 @@ export const generateInsights = (revisions: RevisionData[]) => {
   return insights.slice(0, 4); // Return max 4 insights
 };
 
-// Smart Weak Topic Analysis Types with ML-enhanced insights
-export interface TopicAnalysis {
-  topic: string;
-  subject: string;
-  totalSessions: number;
-  averageAccuracy: number;
-  accuracyStdDev: number;
-  trend: 'improving' | 'declining' | 'stable';
-  consistencyScore: number;
-  weaknessScore: number;
-  concernLevel: 'high' | 'medium' | 'low';
-  insights: string[];
-  revisions: RevisionData[];
-}
-
-export interface WeakTopicsBySubject {
-  [subject: string]: TopicAnalysis[];
-}
-
-// Analyze topics with ML-enhanced insights  
-export const analyzeTopics = (
-  topicMap: Map<string, { subject: string; revisions: RevisionData[] }>,
-  overallAverage: number
-): TopicAnalysis[] => {
-  const analyses: TopicAnalysis[] = [];
-
-  topicMap.forEach((data, topic) => {
-    const { subject, revisions } = data;
-    
-    if (revisions.length < 2) return;
-
-    const accuracies = revisions.map(r => 
-      r.numQuestions > 0 ? (r.numCorrect / r.numQuestions) * 100 : 0
-    );
-    const avgAccuracy = accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length;
-
-    const variance = accuracies.reduce((sum, acc) => sum + Math.pow(acc - avgAccuracy, 2), 0) / accuracies.length;
-    const stdDev = Math.sqrt(variance);
-    const consistencyScore = Math.max(0, 100 - stdDev);
-
-    const sortedRevs = [...revisions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const midPoint = Math.floor(sortedRevs.length / 2);
-    const firstHalf = sortedRevs.slice(0, midPoint);
-    const secondHalf = sortedRevs.slice(midPoint);
-
-    const firstHalfAvg = firstHalf.reduce((sum, r) => sum + (r.numQuestions > 0 ? (r.numCorrect / r.numQuestions) * 100 : 0), 0) / firstHalf.length;
-    const secondHalfAvg = secondHalf.reduce((sum, r) => sum + (r.numQuestions > 0 ? (r.numCorrect / r.numQuestions) * 100 : 0), 0) / secondHalf.length;
-
-    const trendDiff = secondHalfAvg - firstHalfAvg;
-    let trend: 'improving' | 'declining' | 'stable';
-    if (trendDiff > 5) trend = 'improving';
-    else if (trendDiff < -5) trend = 'declining';
-    else trend = 'stable';
-
-    const accuracyGap = Math.max(0, overallAverage - avgAccuracy);
-    const accuracyComponent = (accuracyGap / overallAverage) * 40;
-    const inconsistencyComponent = (stdDev / 50) * 30;
-    const trendComponent = trend === 'declining' ? 20 : (trend === 'stable' ? 10 : 0);
-    const frequencyComponent = Math.min(10, (revisions.length / 5) * 10);
-    const weaknessScore = Math.min(100, accuracyComponent + inconsistencyComponent + trendComponent + frequencyComponent);
-
-    let concernLevel: 'high' | 'medium' | 'low';
-    if (weaknessScore > 60) concernLevel = 'high';
-    else if (weaknessScore > 35) concernLevel = 'medium';
-    else concernLevel = 'low';
-
-    const insights: string[] = [];
-    if (avgAccuracy < overallAverage * 0.7) insights.push(`Significantly below average (${(overallAverage - avgAccuracy).toFixed(1)}% gap)`);
-    else if (avgAccuracy < overallAverage * 0.85) insights.push(`Below your typical performance`);
-    if (stdDev > 20) insights.push(`High variability in scores (±${stdDev.toFixed(1)}%)`);
-    else if (stdDev > 15) insights.push(`Inconsistent performance across sessions`);
-    if (trend === 'declining') insights.push(`Performance declining over time (-${Math.abs(trendDiff).toFixed(1)}%)`);
-    else if (trend === 'stable' && avgAccuracy < overallAverage) insights.push(`No improvement despite practice`);
-    if (revisions.length >= 5) insights.push(`Frequently encountered (${revisions.length} sessions)`);
-    if (avgAccuracy < 50) insights.push(`Critical: Success rate below 50%`);
-    else if (avgAccuracy < 70) insights.push(`Needs focused attention and practice`);
-
-    analyses.push({ topic, subject, totalSessions: revisions.length, averageAccuracy: avgAccuracy, accuracyStdDev: stdDev, trend, consistencyScore, weaknessScore, concernLevel, insights, revisions });
-  });
-
-  return analyses;
-};
-
-// Identify weak topics using ML-enhanced analysis
-export const identifyWeakTopics = (analyses: TopicAnalysis[]): TopicAnalysis[] => {
-  return analyses.filter(analysis => analysis.concernLevel !== 'low' || analysis.weaknessScore > 35)
-    .sort((a, b) => b.weaknessScore - a.weaknessScore).slice(0, 15);
-};
-
-// Extract topics from unstructured text using NLP
-export const extractTopicsFromText = (revisions: RevisionData[]): Map<string, { subject: string; revisions: RevisionData[] }> => {
-  const topicMap = new Map<string, { subject: string; revisions: RevisionData[] }>();
-  
-  const stopwords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'been',
-    'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should',
-    'could', 'may', 'might', 'must', 'can', 'about', 'into', 'through', 'during',
-    'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further',
-    'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'both',
-    'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not',
-    'only', 'own', 'same', 'so', 'than', 'too', 'very', 'this', 'that', 'these',
-    'those', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you',
-    'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself',
-    'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them',
-    'their', 'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'whose',
-    'question', 'questions', 'answer', 'answers', 'studied', 'study', 'revision',
-    'practice', 'test', 'exam', 'got', 'did', 'tried', 'need', 'needs', 'work'
-  ]);
-
-  const allRemarks = revisions.filter(r => r.remarks && r.remarks.trim().length > 0).map(r => ({ text: r.remarks!, revision: r }));
-  const termFrequency = new Map<string, number>();
-  const documentFrequency = new Map<string, number>();
-  const termToRevisions = new Map<string, Set<RevisionData>>();
-
-  allRemarks.forEach(({ text, revision }) => {
-    const terms = extractMeaningfulTerms(text, stopwords);
-    const uniqueTermsInDoc = new Set(terms);
-    terms.forEach(term => {
-      termFrequency.set(term, (termFrequency.get(term) || 0) + 1);
-      if (!termToRevisions.has(term)) termToRevisions.set(term, new Set());
-      termToRevisions.get(term)!.add(revision);
-    });
-    uniqueTermsInDoc.forEach(term => {
-      documentFrequency.set(term, (documentFrequency.get(term) || 0) + 1);
-    });
-  });
-
-  const totalDocs = allRemarks.length;
-  const tfidfScores = new Map<string, number>();
-  termFrequency.forEach((tf, term) => {
-    const df = documentFrequency.get(term) || 1;
-    const idf = Math.log(totalDocs / df);
-    tfidfScores.set(term, tf * idf);
-  });
-
-  const sortedTopics = Array.from(tfidfScores.entries())
-    .filter(([term]) => {
-      const df = documentFrequency.get(term) || 0;
-      const tf = termFrequency.get(term) || 0;
-      return (df >= 2 || tf >= 3) && term.length >= 3;
-    })
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 30);
-
-  sortedTopics.forEach(([term]) => {
-    const revisionSet = termToRevisions.get(term);
-    if (revisionSet && revisionSet.size > 0) {
-      const revs = Array.from(revisionSet);
-      const subjectCounts = new Map<string, number>();
-      revs.forEach(r => subjectCounts.set(r.subject, (subjectCounts.get(r.subject) || 0) + 1));
-      const mostCommonSubject = Array.from(subjectCounts.entries()).sort((a, b) => b[1] - a[1])[0][0];
-      topicMap.set(term, { subject: mostCommonSubject, revisions: revs });
-    }
-  });
-
-  return topicMap;
-};
-
-const extractMeaningfulTerms = (text: string, stopwords: Set<string>): string[] => {
-  const terms: string[] = [];
-  const normalized = text.toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
-  const words = normalized.split(' ').filter(w => w.length > 2);
-
-  for (let i = 0; i < words.length; i++) {
-    if (i < words.length - 1) {
-      const phrase = `${words[i]} ${words[i + 1]}`;
-      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1])) terms.push(phrase);
-    }
-    if (i < words.length - 2) {
-      const phrase = `${words[i]} ${words[i + 1]} ${words[i + 2]}`;
-      if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1]) && !stopwords.has(words[i + 2])) terms.push(phrase);
-    }
-    if (!stopwords.has(words[i]) && words[i].length >= 4) terms.push(words[i]);
-  }
-
-  return terms;
-};
+// (Smart weak topic analysis and NLP utilities removed)
+// If you want to re-enable advanced topic analysis in future, re-add TopicAnalysis and the related functions here.
