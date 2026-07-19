@@ -1,12 +1,55 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, BarChart3, PlusCircle } from "lucide-react";
+import { Plus, BarChart3, PlusCircle, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import AddQuestionModal from "@/components/AddQuestionModal";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { collection, getDocs, writeBatch, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [isAddQuestionOpen, setIsAddQuestionOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const { toast } = useToast();
+
+  const hardReset = async () => {
+    setIsResetting(true);
+    try {
+      const collectionsToWipe = ["revisions", "weak topics", "fmt"];
+      let totalDeleted = 0;
+      for (const colName of collectionsToWipe) {
+        const snap = await getDocs(collection(db, colName));
+        // Batch delete in chunks of 400
+        const docs = snap.docs;
+        for (let i = 0; i < docs.length; i += 400) {
+          const batch = writeBatch(db);
+          docs.slice(i, i + 400).forEach(d => batch.delete(doc(db, colName, d.id)));
+          await batch.commit();
+        }
+        totalDeleted += docs.length;
+      }
+      toast({
+        title: "Hard reset complete",
+        description: `Deleted ${totalDeleted} documents. Questions library preserved.`,
+      });
+      setResetOpen(false);
+      setConfirmText("");
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Reset failed", description: e.message, variant: "destructive" });
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
@@ -113,6 +156,58 @@ const Index = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+
+
+        {/* Danger Zone */}
+        <div className="mt-16">
+          <Card className="border-2 border-destructive/40 bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Danger Zone
+              </CardTitle>
+              <CardDescription>
+                Hard reset wipes all revision logs, weak topics, and FLMT records.
+                Your Questions Library is preserved.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog open={resetOpen} onOpenChange={setResetOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">Hard Reset All Data</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete ALL revisions, weak topics, and Full Length Mock Test records.
+                      Your Questions Library will NOT be touched. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="space-y-2">
+                    <Label>Type <span className="font-mono font-bold">RESET</span> to confirm:</Label>
+                    <Input
+                      value={confirmText}
+                      onChange={(e) => setConfirmText(e.target.value)}
+                      placeholder="RESET"
+                    />
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isResetting}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      disabled={confirmText !== "RESET" || isResetting}
+                      onClick={(e) => { e.preventDefault(); hardReset(); }}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isResetting ? "Resetting..." : "Yes, delete everything"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
