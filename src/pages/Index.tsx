@@ -157,7 +157,8 @@ const Index = () => {
             </Card>
           </div>
         </div>
-      </div>
+
+
 
         {/* Danger Zone */}
         <div className="mt-16">
